@@ -1,3 +1,14 @@
 # Retool CLI
 
-## Installation instructions
+## Installation Instructions
+
+1. `git clone https://github.com/tryretool/retool-cli.git`
+2. `cd retool-cli`
+3. `npm run build`
+4. `npm install -g .`
+
+## Usage Instructions
+
+`retool --help`
+
+Note: If you see the `Unknown command. '/Users/peterargany/.nvm/versions/node/v16.14.2/bin/retool' exists but is not an executable file.` error, run `chmod +x lib/index.js`.
