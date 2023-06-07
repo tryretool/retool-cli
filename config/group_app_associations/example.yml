@@ -1,0 +1,11 @@
+version: "1.0"
+type: "groupAppAssociation"
+groupName: "example"
+universalAccess: "none"
+apps:
+ - name: "Name of first app that the group has owner access to"
+   accessLevel: "own"
+ - name: "Name of app that the group has write access to"
+   accessLevel: "write"
+ - name: "Name of app that the group has read access to"
+   accessLevel: "read"

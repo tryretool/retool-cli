@@ -1,0 +1,47 @@
+version: "2"
+services:
+  api:
+    image: tryretool/backend:latest
+    env_file: ./docker.env
+    environment:
+      - SERVICE_TYPE=MAIN_BACKEND,DB_CONNECTOR
+      - COOKIE_INSECURE=true # Disables secure cookies
+      - APPS_FS_SYNC_ON=true # Enables syncing to filesystem
+      - APPS_FS_SYNC_PROTECTED_BRANCHES=master # Protects the master branch
+    networks:
+      - retool-network
+    depends_on:
+      - postgres
+    command: bash -c "chmod -R +x ./docker_scripts; sync; ./docker_scripts/wait-for-it.sh postgres:5432; ./docker_scripts/start_api.sh"
+    links:
+      - postgres
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/local/retool-git-repo # <- Change '.' to '/myother/gitrepo' to store the retool apps in a different repo
+
+  jobs-runner:
+    image: tryretool/backend:latest
+    env_file: ./docker.env
+    environment:
+      - SERVICE_TYPE=JOBS_RUNNER
+    networks:
+      - retool-network
+    depends_on:
+      - postgres
+    restart: on-failure
+    command: bash -c "chmod -R +x ./docker_scripts; sync; ./docker_scripts/wait-for-it.sh postgres:5432; ./docker_scripts/start_api.sh"
+    links:
+      - postgres
+
+  postgres:
+    image: "postgres:9.6.5"
+    env_file: docker.env
+    networks:
+      - retool-network
+    volumes:
+      - retool-pg-data:/var/lib/postgresql/data
+networks:
+  retool-network:
+volumes:
+  retool-pg-data:

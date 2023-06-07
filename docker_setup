@@ -1,0 +1,36 @@
+#!/bin/bash
+
+postgresPassword=$(cat /dev/urandom | base64 | head -c 64)
+jwtSecret=$(cat /dev/urandom | base64 | head -c 256)
+encryptionKey=$(cat /dev/urandom | base64 | head -c 64)
+publicIpAddress=$(dig +short myip.opendns.com @resolver1.opendns.com)
+hostname=$publicIpAddress
+
+if [ -f ./docker.env ]; then
+  mv docker.env docker.env.$(date +"%Y-%m-%d_%H-%M-%S")
+fi
+touch docker.env
+
+echo '## Set node environment to production' >> docker.env
+echo 'NODE_ENV=production' >> docker.env
+echo '' >> docker.env
+echo '## Set the JWT secret for the API server' >> docker.env
+echo "JWT_SECRET=${jwtSecret}" >> docker.env
+echo '' >> docker.env
+
+echo '## Set and generate postgres credentials' >> docker.env
+echo 'POSTGRES_DB=hammerhead_production' >> docker.env
+echo 'POSTGRES_USER=retool_internal_user' >> docker.env
+echo 'POSTGRES_HOST=postgres' >> docker.env
+echo 'POSTGRES_PORT=5432' >> docker.env
+echo "POSTGRES_PASSWORD=${postgresPassword}" >> docker.env
+
+echo '## Set key to encrypt and decrypt database passwords, etc.' >> docker.env
+echo "ENCRYPTION_KEY=${encryptionKey}" >> docker.env
+echo '' >> docker.env
+
+echo '' >> docker.env
+echo '## License key' >> docker.env
+echo 'LICENSE_KEY=EXPIRED-LICENSE-KEY-TRIAL' >> docker.env
+
+echo "Cool! Now just run docker-compose up to launch Retool."
