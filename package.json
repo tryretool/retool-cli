@@ -22,6 +22,7 @@
   "homepage": "https://github.com/tryretool/retool-cli#readme",
   "dependencies": {
     "csv-parser": "^3.0.0",
+    "inquirer": "^8.0.0",
     "node-fetch": "^2.6.11",
     "yargs": "^17.7.2"
   },

@@ -10,6 +10,8 @@ export type FieldMapping = Array<{
   dbType?: string;
 }>;
 
+let httpHeaders = {};
+
 exports.command = "db";
 exports.desc = "Interface with Retool DB";
 exports.builder = {
