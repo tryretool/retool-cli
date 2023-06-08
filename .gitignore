@@ -2,3 +2,4 @@ docker.env
 .DS_Store
 lib/**/*
 node_modules/**/*
+*.csv
