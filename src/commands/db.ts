@@ -20,8 +20,7 @@ exports.builder = {
     describe: "Create a new Retool database from csv",
   },
 };
-// @ts-ignore
-exports.handler = async function (argv) {
+exports.handler = async function (argv: any) {
   if (argv.new) {
     //Verify file exists, is a csv, and is < 3MB
     if (!fs.existsSync(argv.new) || !argv.new.endsWith(".csv")) {
@@ -74,9 +73,8 @@ exports.handler = async function (argv) {
       .then((data) => {
         console.log(data);
       })
-      // @ts-ignore
-      .catch(function (err) {
-        console.error("Unable to create table -", err);
+      .catch(function (err: any) {
+        console.error("Unable to create table - ", err);
       });
   }
 };
