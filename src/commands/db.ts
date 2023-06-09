@@ -4,7 +4,7 @@ const inquirer = require("inquirer");
 const path = require("path");
 
 import { parseCSV } from "../utils/csv";
-import { getCredentials } from "../utils/credentials";
+import { Credentials, getCredentials } from "../utils/credentials";
 
 export type FieldMapping = Array<{
   csvField: string;
@@ -32,9 +32,14 @@ exports.handler = async function (argv: any) {
     "x-xsrf-token": credentials.xsrf,
     cookie: `accessToken=${credentials.accessToken};`,
   };
+  const gridId = await getGridId(httpHeaders, credentials);
+  if (!gridId) {
+    return;
+  }
 
+  // Handle `retool db --new <path-to-csv>`
   if (argv.new) {
-    //Verify file exists, is a csv, and is < 3MB
+    //Verify file exists, is a csv, and is < 3MB.
     if (
       !fs.existsSync(argv.new) ||
       !argv.new.endsWith(".csv") ||
@@ -44,7 +49,7 @@ exports.handler = async function (argv: any) {
       return;
     }
 
-    //Default to filename if no table name is provided.
+    //Default to csv filename if no table name is provided.
     var tableName = path.basename(argv.new).slice(0, -4);
     const tableInput: { tableName: string } = await inquirer.prompt([
       {
@@ -57,12 +62,12 @@ exports.handler = async function (argv: any) {
     if (tableInput.tableName && tableInput.tableName.length > 0) {
       tableName = tableInput.tableName;
     }
-    // Remove spaces from table name
+    // Remove spaces from table name.
     tableName = tableName.replace(/\s/g, "_");
 
     const parseResult = await parseCSV(argv.new);
     if (!parseResult.success) {
-      console.log(parseResult.error);
+      console.error(parseResult.error);
       return;
     }
 
@@ -88,26 +93,54 @@ exports.handler = async function (argv: any) {
       },
     };
 
-    //Fire off network request
-    fetch(
-      `https://${credentials.domain}/api/grid/grdcebxxsznvs5g0jj4hm90/action`,
+    const createTableResponse = await fetch(
+      `https://${credentials.domain}/api/grid/${gridId}/action`,
       {
         headers: httpHeaders,
         body: JSON.stringify(payload),
         method: "POST",
       }
-    )
-      // @ts-ignore
-      .then((response) => {
-        console.log(response);
-        return response.json();
-      })
-      // @ts-ignore
-      .then((data) => {
-        console.log(data);
-      })
-      .catch(function (err: any) {
-        console.error("Unable to create table - ", err);
-      });
+    );
+    const createTableResponseJson = await createTableResponse.json();
+    console.log(createTableResponseJson);
   }
 };
+
+// Grid ID is needed for all DB operations that exist right now.
+// TODO: Cache this somewhere so we don't have to fetch it every time.
+async function getGridId(
+  httpHeaders: any,
+  credentials: Credentials
+): Promise<string | undefined> {
+  try {
+    // 1. Fetch all resources
+    const resources = await fetch(
+      `https://${credentials.domain}/api/resources`,
+      {
+        headers: httpHeaders,
+        method: "GET",
+      }
+    );
+
+    // 2. Filter down to Retool DB UUID
+    const allResources = await resources.json();
+    const retoolDBs = allResources.resources.filter(
+      (resource: any) => resource.displayName === "retool_db"
+    );
+    const retoolDBUuid = retoolDBs[0].name;
+
+    // 3. Fetch Grid Info
+    const grid = await fetch(
+      `https://${credentials.domain}/api/grid/retooldb/${retoolDBUuid}?env=production`,
+      {
+        headers: httpHeaders,
+        method: "GET",
+      }
+    );
+    const gridJson = await grid.json();
+    return gridJson.gridInfo.id;
+  } catch (err: any) {
+    console.error("Error fetching RetoolDB grid id: ", err);
+    return;
+  }
+}

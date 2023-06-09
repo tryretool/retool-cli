@@ -15,7 +15,7 @@ export function askForCredentials() {
       {
         name: "domain",
         message:
-          "Welcome to the Retool CLI! What is your Retool domain? (e.g. my-org.retool.com)",
+          "Welcome to the Retool CLI! What is your Retool domain? (e.g. my-org.retool.com). Don't include https:// or http://",
         type: "input",
       },
       {
