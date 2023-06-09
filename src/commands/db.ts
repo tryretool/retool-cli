@@ -32,10 +32,11 @@ exports.handler = async function (argv: any) {
     "x-xsrf-token": credentials.xsrf,
     cookie: `accessToken=${credentials.accessToken};`,
   };
-  const gridId = await getGridId(httpHeaders, credentials);
-  if (!gridId) {
+  const gridFetch = await getGridId(httpHeaders, credentials);
+  if (!gridFetch) {
     return;
   }
+  const { retoolDBUuid, gridId } = gridFetch;
 
   // Handle `retool db --new <path-to-csv>`
   if (argv.new) {
@@ -78,6 +79,7 @@ exports.handler = async function (argv: any) {
       ignored: false,
     }));
 
+    // See NewTable.tsx if implementing more complex logic.
     const payload = {
       kind: "CreateTable",
       payload: {
@@ -85,9 +87,10 @@ exports.handler = async function (argv: any) {
         fieldMapping,
         data: rows,
         allowSchemaEditOverride: true,
-        //TODO: Generalize this, right now this assumes a primary key of 'id', look at NewTable.tsx.
         primaryKey: {
-          kind: "CustomColumn",
+          kind: headers.includes("id")
+            ? "CustomColumn"
+            : "IntegerAutoIncrement",
           name: "id",
         },
       },
@@ -102,7 +105,17 @@ exports.handler = async function (argv: any) {
       }
     );
     const createTableResponseJson = await createTableResponse.json();
-    console.log(createTableResponseJson);
+    if (createTableResponseJson.success) {
+      console.log("Successfully created a RetoolDB!");
+      console.log(
+        `See it here: https://${credentials.domain}/resources/data/${retoolDBUuid}/${tableName}?env=production`
+      );
+    } else {
+      console.error(
+        "Failed to create a RetoolDB, error: ",
+        createTableResponse.error
+      );
+    }
   }
 };
 
@@ -111,7 +124,7 @@ exports.handler = async function (argv: any) {
 async function getGridId(
   httpHeaders: any,
   credentials: Credentials
-): Promise<string | undefined> {
+): Promise<{ retoolDBUuid: string; gridId: string } | undefined> {
   try {
     // 1. Fetch all resources
     const resources = await fetch(
@@ -138,7 +151,10 @@ async function getGridId(
       }
     );
     const gridJson = await grid.json();
-    return gridJson.gridInfo.id;
+    return {
+      retoolDBUuid,
+      gridId: gridJson.gridInfo.id,
+    };
   } catch (err: any) {
     console.error("Error fetching RetoolDB grid id: ", err);
     return;
