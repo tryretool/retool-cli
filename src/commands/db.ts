@@ -2,6 +2,7 @@ const fetch = require("node-fetch");
 const fs = require("fs");
 
 import { parseCSV } from "../utils/csv";
+import { getCredentials } from "../utils/credentials";
 
 export type FieldMapping = Array<{
   csvField: string;
@@ -9,8 +10,6 @@ export type FieldMapping = Array<{
   ignored: boolean;
   dbType?: string;
 }>;
-
-let httpHeaders = {};
 
 exports.command = "db";
 exports.desc = "Interface with Retool DB";
@@ -21,6 +20,17 @@ exports.builder = {
   },
 };
 exports.handler = async function (argv: any) {
+  const credentials = getCredentials();
+  if (!credentials) {
+    return;
+  }
+  const httpHeaders = {
+    accept: "application/json",
+    "content-type": "application/json",
+    "x-xsrf-token": credentials.xsrf,
+    cookie: `accessToken=${credentials.accessToken};`,
+  };
+
   if (argv.new) {
     //Verify file exists, is a csv, and is < 3MB
     if (!fs.existsSync(argv.new) || !argv.new.endsWith(".csv")) {
@@ -59,11 +69,14 @@ exports.handler = async function (argv: any) {
     };
 
     //Fire off network request
-    fetch("https://admin.retool.dev/api/grid/grdcebxxsznvs5g0jj4hm90/action", {
-      headers: httpHeaders,
-      body: JSON.stringify(payload),
-      method: "POST",
-    })
+    fetch(
+      `https://${credentials.domain}/api/grid/grdcebxxsznvs5g0jj4hm90/action`,
+      {
+        headers: httpHeaders,
+        body: JSON.stringify(payload),
+        method: "POST",
+      }
+    )
       // @ts-ignore
       .then((response) => {
         console.log(response);

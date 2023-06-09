@@ -41,12 +41,23 @@ export function askForCredentials() {
     });
 }
 
-export function getCredentials(): Credentials {
+export function getCredentials(): Credentials | undefined {
+  if (!fs.existsSync(CREDENTIALS_PATH)) {
+    console.log(`No credentials found! To login, run: retool login`);
+    return;
+  }
   const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
   return credentials;
 }
 
 export function deleteCredentials() {
+  if (!fs.existsSync(CREDENTIALS_PATH)) {
+    console.log(
+      `No credentials found, nothing to delete! To login, run: retool login`
+    );
+    return;
+  }
+
   fs.unlink(CREDENTIALS_PATH, (err: any) => {
     if (err) {
       console.error("Error deleting credentials from disk: ", err);
