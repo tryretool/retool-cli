@@ -33,7 +33,7 @@ export function askForCredentials() {
     .then(function (answer: Credentials) {
       fs.writeFile(CREDENTIALS_PATH, JSON.stringify(answer), (err: any) => {
         if (err) {
-          console.error(err);
+          console.error("Error saving credentials to disk: ", err);
           return;
         }
         console.log("Credentials saved successfully!");
@@ -44,4 +44,15 @@ export function askForCredentials() {
 export function getCredentials(): Credentials {
   const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
   return credentials;
+}
+
+export function deleteCredentials() {
+  fs.unlink(CREDENTIALS_PATH, (err: any) => {
+    if (err) {
+      console.error("Error deleting credentials from disk: ", err);
+      return;
+    }
+
+    console.log("Credentials successfully deleted.");
+  });
 }

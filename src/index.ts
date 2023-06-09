@@ -6,7 +6,7 @@ import { CREDENTIALS_PATH, askForCredentials } from "./utils/credentials";
 
 if (!fs.existsSync(CREDENTIALS_PATH)) {
   console.log(
-    `No credentials found at path: ${CREDENTIALS_PATH}, executing init command:`
+    `No credentials found at path: ${CREDENTIALS_PATH}, executing login command:`
   );
   askForCredentials();
 } else {
