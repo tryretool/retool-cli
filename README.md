@@ -11,4 +11,4 @@
 
 `retool --help`
 
-Note: If you see an error like: `Unknown command. '.../bin/retool' exists but is not an executable file.` error, run `chmod +x retool-cli/lib/index.js`. This is a temporary hack!
+Note: If you see an error like: `Unknown command. '.../bin/retool' exists but is not an executable file.`, run `chmod +x retool-cli/lib/index.js`. This is a temporary hack!

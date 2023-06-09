@@ -1,5 +1,7 @@
 const fetch = require("node-fetch");
 const fs = require("fs");
+const inquirer = require("inquirer");
+const path = require("path");
 
 import { parseCSV } from "../utils/csv";
 import { getCredentials } from "../utils/credentials";
@@ -37,8 +39,22 @@ exports.handler = async function (argv: any) {
       console.log("File does not exist or is not a csv");
       return;
     }
-    //TODO: Allow for customization of table name. Allow for slicing on leading ./
-    const newTableName = argv.new.slice(0, -4);
+
+    //Default to filename if no table name is provided.
+    var tableName = path.basename(argv.new).slice(0, -4);
+    const tableInput: { tableName: string } = await inquirer.prompt([
+      {
+        name: "tableName",
+        message:
+          "What would you like to name your new table? If you leave this blank, we'll use the name of the csv file. \n  Hint: No spaces, use underscores.",
+        type: "input",
+      },
+    ]);
+    if (tableInput.tableName && tableInput.tableName.length > 0) {
+      tableName = tableInput.tableName;
+    }
+    // Remove spaces from table name
+    tableName = tableName.replace(/\s/g, "_");
 
     const parseResult = await parseCSV(argv.new);
     if (!parseResult.success) {
@@ -56,7 +72,7 @@ exports.handler = async function (argv: any) {
     const payload = {
       kind: "CreateTable",
       payload: {
-        name: newTableName,
+        name: tableName,
         fieldMapping,
         data: rows,
         allowSchemaEditOverride: true,
