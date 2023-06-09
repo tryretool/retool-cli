@@ -35,8 +35,12 @@ exports.handler = async function (argv: any) {
 
   if (argv.new) {
     //Verify file exists, is a csv, and is < 3MB
-    if (!fs.existsSync(argv.new) || !argv.new.endsWith(".csv")) {
-      console.log("File does not exist or is not a csv");
+    if (
+      !fs.existsSync(argv.new) ||
+      !argv.new.endsWith(".csv") ||
+      fs.statSync(argv.new).size > 3145728
+    ) {
+      console.log("File does not exist or is not a csv or is > 3MB.");
       return;
     }
 
