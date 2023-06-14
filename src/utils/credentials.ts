@@ -9,7 +9,8 @@ export type Credentials = {
   accessToken: string;
 };
 
-export function askForCredentials() {
+// Legacy way of getting credentials.
+function askForCredentials() {
   inquirer
     .prompt([
       {
@@ -31,14 +32,22 @@ export function askForCredentials() {
       },
     ])
     .then(function (answer: Credentials) {
-      fs.writeFile(CREDENTIALS_PATH, JSON.stringify(answer), (err: any) => {
-        if (err) {
-          console.error("Error saving credentials to disk: ", err);
-          return;
-        }
-        console.log("Credentials saved successfully!");
-      });
+      persistCredentials(answer);
     });
+}
+
+export function persistCredentials(credentials: Credentials) {
+  fs.writeFileSync(
+    CREDENTIALS_PATH,
+    JSON.stringify(credentials),
+    (err: any) => {
+      if (err) {
+        console.error("Error saving credentials to disk: ", err);
+        return;
+      }
+      console.log("Credentials saved successfully!");
+    }
+  );
 }
 
 export function getCredentials(): Credentials | undefined {
