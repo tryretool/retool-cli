@@ -10,13 +10,13 @@ export type Credentials = {
 };
 
 // Legacy way of getting credentials.
-function askForCredentials() {
+export function askForCookies() {
   inquirer
     .prompt([
       {
         name: "domain",
         message:
-          "Welcome to the Retool CLI! What is your Retool domain? (e.g. my-org.retool.com). Don't include https:// or http://",
+          "What is your Retool domain? (e.g. my-org.retool.com). Don't include https:// or http://",
         type: "input",
       },
       {
@@ -36,6 +36,7 @@ function askForCredentials() {
     });
 }
 
+// Persist credentials to disk at CREDENTIALS_PATH.
 export function persistCredentials(credentials: Credentials) {
   fs.writeFileSync(
     CREDENTIALS_PATH,
@@ -50,6 +51,7 @@ export function persistCredentials(credentials: Credentials) {
   );
 }
 
+// Get credentials from disk.
 export function getCredentials(): Credentials | undefined {
   if (!fs.existsSync(CREDENTIALS_PATH)) {
     console.log(`No credentials found! To login, run: retool login`);
@@ -59,6 +61,12 @@ export function getCredentials(): Credentials | undefined {
   return credentials;
 }
 
+// Check if credentials exist on disk.
+export function doCredentialsExist(): boolean {
+  return fs.existsSync(CREDENTIALS_PATH);
+}
+
+// Delete credentials from disk if they exist.
 export function deleteCredentials() {
   if (!fs.existsSync(CREDENTIALS_PATH)) {
     console.log(
