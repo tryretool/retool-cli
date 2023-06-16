@@ -37,18 +37,14 @@ export function askForCookies() {
 }
 
 // Persist credentials to disk at CREDENTIALS_PATH.
-export function persistCredentials(credentials: Credentials) {
-  fs.writeFileSync(
-    CREDENTIALS_PATH,
-    JSON.stringify(credentials),
-    (err: any) => {
-      if (err) {
-        console.error("Error saving credentials to disk: ", err);
-        return;
-      }
-      console.log("Credentials saved successfully!");
+export async function persistCredentials(credentials: Credentials) {
+  fs.writeFile(CREDENTIALS_PATH, JSON.stringify(credentials), (err: any) => {
+    if (err) {
+      console.error("Error saving credentials to disk: ", err);
+      return;
     }
-  );
+    console.log("Credentials saved successfully!");
+  });
 }
 
 // Get credentials from disk.
