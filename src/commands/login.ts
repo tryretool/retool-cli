@@ -140,6 +140,7 @@ async function loginViaEmail() {
       accessToken: accessTokenMatches[1],
       xsrf: xsrfTokenMatches[1],
     });
+    console.log("Credentials saved/updated successfully!");
   } else {
     console.log(
       "Error parsing credentials from HTTP Response. Please try again."
@@ -167,6 +168,7 @@ async function loginViaBrowser() {
       accessToken,
       xsrf: xsrfToken,
     });
+    console.log("Credentials saved/updated successfully!");
 
     res.sendFile(path.join(__dirname, "../loginPages/loginSuccess.html"));
     server_online = false;

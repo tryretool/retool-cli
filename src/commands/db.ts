@@ -4,7 +4,11 @@ const inquirer = require("inquirer");
 const path = require("path");
 
 import { parseCSV } from "../utils/csv";
-import { Credentials, getCredentials } from "../utils/credentials";
+import {
+  Credentials,
+  getCredentials,
+  fetchDBCredentials,
+} from "../utils/credentials";
 
 export type FieldMapping = Array<{
   csvField: string;
@@ -19,6 +23,7 @@ exports.builder = {
   new: {
     alias: "n",
     describe: "Create a new Retool database from csv",
+    nargs: 1,
   },
 };
 exports.handler = async function (argv: any) {
@@ -26,17 +31,15 @@ exports.handler = async function (argv: any) {
   if (!credentials) {
     return;
   }
-  const httpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-    "x-xsrf-token": credentials.xsrf,
-    cookie: `accessToken=${credentials.accessToken};`,
-  };
-  const gridFetch = await getGridId(httpHeaders, credentials);
-  if (!gridFetch) {
-    return;
+  let { retoolDBUuid, gridId } = credentials;
+  if (!gridId || !retoolDBUuid) {
+    const dbCredentials = await fetchDBCredentials();
+    if (!dbCredentials) {
+      return;
+    }
+    retoolDBUuid = dbCredentials.retoolDBUuid;
+    gridId = dbCredentials.gridId;
   }
-  const { retoolDBUuid, gridId } = gridFetch;
 
   // Handle `retool db --new <path-to-csv>`
   if (argv.new) {
@@ -56,7 +59,7 @@ exports.handler = async function (argv: any) {
       {
         name: "tableName",
         message:
-          "What would you like to name your new table? If you leave this blank, we'll use the name of the csv file. \n  Hint: No spaces, use underscores.",
+          "Table name? If blank, defaults to csv filename. \n  Hint: No spaces, use underscores.",
         type: "input",
       },
     ]);
@@ -96,6 +99,13 @@ exports.handler = async function (argv: any) {
       },
     };
 
+    const httpHeaders = {
+      accept: "application/json",
+      "content-type": "application/json",
+      "x-xsrf-token": credentials.xsrf,
+      cookie: `accessToken=${credentials.accessToken};`,
+    };
+
     const createTableResponse = await fetch(
       `https://${credentials.domain}/api/grid/${gridId}/action`,
       {
@@ -113,50 +123,8 @@ exports.handler = async function (argv: any) {
     } else {
       console.error(
         "Failed to create a RetoolDB, error: ",
-        createTableResponse.error
+        createTableResponseJson.error
       );
     }
   }
 };
-
-// Grid ID is needed for all DB operations that exist right now.
-// TODO: Cache this somewhere so we don't have to fetch it every time.
-async function getGridId(
-  httpHeaders: any,
-  credentials: Credentials
-): Promise<{ retoolDBUuid: string; gridId: string } | undefined> {
-  try {
-    // 1. Fetch all resources
-    const resources = await fetch(
-      `https://${credentials.domain}/api/resources`,
-      {
-        headers: httpHeaders,
-        method: "GET",
-      }
-    );
-
-    // 2. Filter down to Retool DB UUID
-    const allResources = await resources.json();
-    const retoolDBs = allResources.resources.filter(
-      (resource: any) => resource.displayName === "retool_db"
-    );
-    const retoolDBUuid = retoolDBs[0].name;
-
-    // 3. Fetch Grid Info
-    const grid = await fetch(
-      `https://${credentials.domain}/api/grid/retooldb/${retoolDBUuid}?env=production`,
-      {
-        headers: httpHeaders,
-        method: "GET",
-      }
-    );
-    const gridJson = await grid.json();
-    return {
-      retoolDBUuid,
-      gridId: gridJson.gridInfo.id,
-    };
-  } catch (err: any) {
-    console.error("Error fetching RetoolDB grid id: ", err);
-    return;
-  }
-}
