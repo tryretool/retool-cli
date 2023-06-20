@@ -4,11 +4,8 @@ const inquirer = require("inquirer");
 const path = require("path");
 
 import { parseCSV } from "../utils/csv";
-import {
-  Credentials,
-  getCredentials,
-  fetchDBCredentials,
-} from "../utils/credentials";
+import { getCredentials, fetchDBCredentials } from "../utils/credentials";
+import { printPsqlCommand } from "../utils/connectionString";
 
 export type FieldMapping = Array<{
   csvField: string;
@@ -31,7 +28,7 @@ exports.handler = async function (argv: any) {
   if (!credentials) {
     return;
   }
-  let { retoolDBUuid, gridId } = credentials;
+  let { retoolDBUuid, gridId, hasConnectionString } = credentials;
   if (!gridId || !retoolDBUuid) {
     const dbCredentials = await fetchDBCredentials();
     if (!dbCredentials) {
@@ -39,6 +36,7 @@ exports.handler = async function (argv: any) {
     }
     retoolDBUuid = dbCredentials.retoolDBUuid;
     gridId = dbCredentials.gridId;
+    hasConnectionString = dbCredentials.hasConnectionString;
   }
 
   // Handle `retool db --new <path-to-csv>`
@@ -118,8 +116,11 @@ exports.handler = async function (argv: any) {
     if (createTableResponseJson.success) {
       console.log("Successfully created a RetoolDB!");
       console.log(
-        `See it here: https://${credentials.domain}/resources/data/${retoolDBUuid}/${tableName}?env=production`
+        `View in browswer: https://${credentials.domain}/resources/data/${retoolDBUuid}/${tableName}?env=production`
       );
+      if (hasConnectionString) {
+        await printPsqlCommand();
+      }
     } else {
       console.error(
         "Failed to create a RetoolDB, error: ",

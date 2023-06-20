@@ -12,6 +12,7 @@ export type Credentials = {
   accessToken: string;
   gridId?: string;
   retoolDBUuid?: string;
+  hasConnectionString?: boolean;
 };
 
 // Legacy way of getting credentials.
@@ -87,7 +88,8 @@ export function deleteCredentials() {
 }
 
 export async function fetchDBCredentials(): Promise<
-  { retoolDBUuid: string; gridId: string } | undefined
+  | { retoolDBUuid: string; gridId: string; hasConnectionString: boolean }
+  | undefined
 > {
   const credentials = getCredentials();
   if (!credentials) {
@@ -132,9 +134,18 @@ export async function fetchDBCredentials(): Promise<
       ...credentials,
       retoolDBUuid,
       gridId: gridJson.gridInfo.id,
+      hasConnectionString:
+        gridJson.gridInfo.connectionString &&
+        gridJson.gridInfo.connectionString.length > 0,
     };
     await persistCredentials(updatedCredentials);
-    return { retoolDBUuid, gridId: gridJson.gridInfo.id };
+    return {
+      retoolDBUuid,
+      gridId: gridJson.gridInfo.id,
+      hasConnectionString:
+        gridJson.gridInfo.connectionString &&
+        gridJson.gridInfo.connectionString.length > 0,
+    };
   } catch (err: any) {
     console.error("Error fetching RetoolDB grid id: ", err);
     return;
