@@ -10,6 +10,7 @@ import {
   doCredentialsExist,
   askForCookies,
 } from "../utils/credentials";
+import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
 
 exports.command = "login";
 exports.desc = "Log in to Retool";
@@ -120,25 +121,14 @@ async function loginViaEmail() {
   // Step 3: Persist the credentials.
   const { redirectUri } = authJson; // Tip: authJson also contains a user object with lots of info.
   const redirectUrl = new URL(redirectUri);
-  const setCookie = auth.headers.get("Set-Cookie");
+  const accessToken = accessTokenFromCookie(auth.headers.get("Set-Cookie"));
+  const xsrf = xsrfTokenFromCookie(auth.headers.get("Set-Cookie"));
 
-  // Matches everything between accessToken= and ;
-  const accessTokenRegex = /accessToken=([^;]+)/;
-  const accessTokenMatches = setCookie.match(accessTokenRegex);
-  const xsrfTokenRegex = /xsrfToken=([^;]+)/;
-  const xsrfTokenMatches = setCookie.match(xsrfTokenRegex);
-
-  if (
-    redirectUrl.hostname &&
-    accessTokenMatches &&
-    xsrfTokenMatches &&
-    accessTokenMatches.length > 1 &&
-    xsrfTokenMatches.length > 1
-  ) {
+  if (redirectUrl.hostname && accessToken && xsrf) {
     await persistCredentials({
       domain: redirectUrl.hostname,
-      accessToken: accessTokenMatches[1],
-      xsrf: xsrfTokenMatches[1],
+      accessToken,
+      xsrf,
     });
     console.log("Credentials saved/updated successfully!");
   } else {
