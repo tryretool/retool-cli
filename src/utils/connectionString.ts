@@ -6,14 +6,21 @@ import { getCredentials } from "./credentials";
 // Print a psql command to connect to the Retool DB.
 // Connnection string is never persisted, it's fetched when needed.
 // This is done to avoid storing the password in plaintext.
-export async function printPsqlCommand() {
-  const command = await getPsqlCommand();
-  if (command) {
-    console.log(`Connect via psql: \`${command}\``);
+export async function logConnectionStringDetails() {
+  const connectionString = await getConnectionString();
+  if (connectionString) {
+    const parsed = new ConnectionStringParser({
+      scheme: "postgresql",
+      hosts: [],
+    }).parse(connectionString);
+    console.log(
+      `Connect via psql: \`PGPASSWORD=${parsed.password} psql -h ${parsed.hosts[0].host} -U ${parsed.username} ${parsed.endpoint}`
+    );
+    console.log(`Postgres Connection URL: ${connectionString}`);
   }
 }
 
-async function getPsqlCommand(): Promise<string | undefined> {
+async function getConnectionString(): Promise<string | undefined> {
   const credentials = getCredentials();
   if (
     !credentials ||
@@ -38,10 +45,6 @@ async function getPsqlCommand(): Promise<string | undefined> {
   );
   const gridJson = await grid.json();
   if (gridJson.success && gridJson.gridInfo.connectionString) {
-    const parsed = new ConnectionStringParser({
-      scheme: "postgresql",
-      hosts: [],
-    }).parse(gridJson.gridInfo.connectionString);
-    return `PGPASSWORD=${parsed.password} psql -h ${parsed.hosts[0].host} -U ${parsed.username} ${parsed.endpoint}`;
+    return gridJson.gridInfo.connectionString;
   }
 }

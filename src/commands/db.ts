@@ -5,7 +5,7 @@ const path = require("path");
 
 import { parseCSV } from "../utils/csv";
 import { getCredentials, fetchDBCredentials } from "../utils/credentials";
-import { printPsqlCommand } from "../utils/connectionString";
+import { logConnectionStringDetails } from "../utils/connectionString";
 
 export type FieldMapping = Array<{
   csvField: string;
@@ -119,7 +119,7 @@ exports.handler = async function (argv: any) {
         `View in browswer: https://${credentials.domain}/resources/data/${retoolDBUuid}/${tableName}?env=production`
       );
       if (hasConnectionString) {
-        await printPsqlCommand();
+        await logConnectionStringDetails();
       }
     } else {
       console.error(
