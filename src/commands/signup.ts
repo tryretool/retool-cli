@@ -182,16 +182,17 @@ async function collectName(
 }
 
 async function collectOrg(authedHttpHeaders: any): Promise<string | undefined> {
-  const { org } = await inquirer.prompt([
+  let { org } = await inquirer.prompt([
     {
       name: "org",
-      message: "What is your organization name?",
+      message:
+        "What is your organization name? Leave blank to get a random name.",
       type: "input",
     },
   ]);
   if (!org || org.length === 0) {
-    console.log("Invalid organization name, try again.");
-    return;
+    // https://stackoverflow.com/a/8084248
+    org = (Math.random() + 1).toString(36).substring(2);
   }
 
   const checkSubdomainAvailabilityResponse = await fetch(
