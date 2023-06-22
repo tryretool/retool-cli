@@ -1,5 +1,6 @@
 const fetch = require("node-fetch");
 const inquirer = require("inquirer");
+const ora = require("ora");
 
 import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
 import { persistCredentials, doCredentialsExist } from "../utils/credentials";
@@ -34,7 +35,7 @@ exports.handler = async function (argv: any) {
   }
 
   // Step 2: Call signup endpoint, get cookies.
-  // TODO: Add a spinner here.
+  const spinner = ora("Verifying email/password validity on server").start();
   const body = JSON.stringify({
     email,
     password,
@@ -49,6 +50,11 @@ exports.handler = async function (argv: any) {
     body,
     method: "POST",
   });
+  spinner.stop();
+  if (signupResponse.status !== 200) {
+    logHttpError(signupResponse);
+    return;
+  }
   const accessToken = accessTokenFromCookie(
     signupResponse.headers.get("Set-Cookie")
   );
@@ -56,9 +62,7 @@ exports.handler = async function (argv: any) {
     signupResponse.headers.get("Set-Cookie")
   );
   if (!accessToken || !xsrfToken) {
-    const error = await signupResponse.json();
-    console.log("Please try signing up again.");
-    console.log(error);
+    logHttpError(signupResponse);
     return;
   }
 
@@ -87,9 +91,7 @@ exports.handler = async function (argv: any) {
     }
   );
   if (initializeOrganizationResponse.status !== 200) {
-    const error = await initializeOrganizationResponse.json();
-    console.log("Please try signing up again.");
-    console.log(error);
+    logHttpError(initializeOrganizationResponse);
     return;
   }
 
@@ -172,9 +174,7 @@ async function collectName(
     }
   );
   if (changeNameResponse.status !== 200) {
-    const error = await changeNameResponse.json();
-    console.log("Try again.");
-    console.log(error);
+    logHttpError(changeNameResponse);
     return;
   }
 
@@ -203,11 +203,15 @@ async function collectOrg(authedHttpHeaders: any): Promise<string | undefined> {
   );
 
   if (checkSubdomainAvailabilityResponse.status !== 200) {
-    const error = await checkSubdomainAvailabilityResponse.json();
-    console.log("Try again.");
-    console.log(error);
+    logHttpError(checkSubdomainAvailabilityResponse);
     return;
   }
 
   return org;
+}
+
+async function logHttpError(httpRes: any) {
+  const error = await httpRes.json();
+  console.log("Please try again.");
+  console.log(error);
 }

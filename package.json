@@ -27,6 +27,7 @@
     "inquirer": "^8.0.0",
     "node-fetch": "^2.6.11",
     "open": "^7.4.2",
+    "ora": "^5.4.1",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
