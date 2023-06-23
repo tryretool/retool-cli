@@ -191,8 +191,9 @@ async function collectOrg(authedHttpHeaders: any): Promise<string | undefined> {
     },
   ]);
   if (!org || org.length === 0) {
+    // Org must start with letter, append a random string after it.
     // https://stackoverflow.com/a/8084248
-    org = (Math.random() + 1).toString(36).substring(2);
+    org = "z" + (Math.random() + 1).toString(36).substring(2);
   }
 
   const checkSubdomainAvailabilityResponse = await fetch(
