@@ -2,6 +2,7 @@ const fetch = require("node-fetch");
 const fs = require("fs");
 const inquirer = require("inquirer");
 const path = require("path");
+const ora = require("ora");
 
 import { parseCSV } from "../utils/csv";
 import { getCredentials, fetchDBCredentials } from "../utils/credentials";
@@ -24,20 +25,24 @@ exports.builder = {
   },
 };
 exports.handler = async function (argv: any) {
+  const spinner = ora("Verifying Retool DB credentials").start();
   const credentials = getCredentials();
   if (!credentials) {
+    spinner.stop();
     return;
   }
   let { retoolDBUuid, gridId, hasConnectionString } = credentials;
   if (!gridId || !retoolDBUuid) {
     const dbCredentials = await fetchDBCredentials();
     if (!dbCredentials) {
+      spinner.stop();
       return;
     }
     retoolDBUuid = dbCredentials.retoolDBUuid;
     gridId = dbCredentials.gridId;
     hasConnectionString = dbCredentials.hasConnectionString;
   }
+  spinner.stop();
 
   // Handle `retool db --new <path-to-csv>`
   if (argv.new) {
@@ -67,12 +72,15 @@ exports.handler = async function (argv: any) {
     // Remove spaces from table name.
     tableName = tableName.replace(/\s/g, "_");
 
+    let spinner = ora("Parsing CSV").start();
     const parseResult = await parseCSV(argv.new);
+    spinner.stop();
     if (!parseResult.success) {
       console.error(parseResult.error);
       return;
     }
 
+    spinner = ora("Uploading CSV").start();
     const { headers, rows } = parseResult;
     const fieldMapping: FieldMapping = headers.map((header) => ({
       csvField: header,
@@ -112,6 +120,7 @@ exports.handler = async function (argv: any) {
         method: "POST",
       }
     );
+    spinner.stop();
     const createTableResponseJson = await createTableResponse.json();
     if (createTableResponseJson.success) {
       console.log("Successfully created a RetoolDB!");

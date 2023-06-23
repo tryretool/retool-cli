@@ -18,7 +18,3 @@ See [this guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when
 2. `cd retool-cli`
 3. `npm i && npm run build`
 4. `npm install -g .` Installs the `retool` command globally on your machine.
-
-## Debugging
-
-If you see an error like `Unknown command. '.../bin/retool' exists but is not an executable file.`, run `chmod +x lib/index.js`. This is a temp hack.
