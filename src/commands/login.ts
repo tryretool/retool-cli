@@ -43,12 +43,12 @@ exports.handler = async function (argv: any) {
           value: "email",
         },
         {
-          name: "Log in by pasting in cookies",
-          value: "cookies",
+          name: "Log in via Google SSO in a web browser (WIP)",
+          value: "browser",
         },
         {
-          name: "Log in with a web browser (WIP)",
-          value: "browser",
+          name: "Log in by pasting in cookies",
+          value: "cookies",
         },
       ],
     },
@@ -165,8 +165,9 @@ async function loginViaBrowser() {
   });
   const server = await app.listen(3020);
 
-  open(`https://login.retool.com/auth/login?retoolCliRedirect=true`);
-  // open("http://localhost:3000/auth/login?retoolCliRedirect=true");
+  open(`https://login.retool.com/googlelogin?retoolCliRedirect=true`);
+  // For local testing:
+  // open("http://localhost:3000/googlelogin?retoolCliRedirect=true");
 
   // Keep the server online until localhost:3020/auth is hit.
   let server_online = true;
