@@ -76,6 +76,7 @@ exports.handler = async function (argv: any) {
     const parseResult = await parseCSV(argv.new);
     spinner.stop();
     if (!parseResult.success) {
+      console.log("Failed to parse CSV, error:");
       console.error(parseResult.error);
       return;
     }
