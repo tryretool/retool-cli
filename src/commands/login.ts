@@ -161,7 +161,7 @@ async function loginViaBrowser() {
 
     let domain, url;
     try {
-      url = new URL(req.query.redirect as string);
+      url = new URL(decodeURIComponent(req.query.redirect as string));
     } catch {}
 
     if (!req.query.redirect || !url) {
