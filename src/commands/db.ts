@@ -21,6 +21,7 @@ exports.builder = {
   new: {
     alias: "n",
     describe: "Create a new Retool database from csv",
+    type: "string",
     nargs: 1,
   },
 };

@@ -11,6 +11,7 @@ import {
   askForCookies,
 } from "../utils/credentials";
 import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
+import { url } from "inspector";
 
 exports.command = "login";
 exports.desc = "Log in to Retool";
@@ -139,37 +140,66 @@ async function loginViaEmail() {
 }
 
 async function loginViaBrowser() {
+  // Start a short lived local server to listen for the SSO response.
   const app = express();
   app.use(cookieParser());
 
-  app.get("/auth", function (req, res) {
+  // Step 4: Handle the SSO response.
+  // Success scenario format: http://localhost:3020/auth?redirect=https://mycompany.retool.com
+  app.get("/auth", async function (req, res) {
     const accessToken = req.cookies?.accessToken;
     const xsrfToken = req.cookies?.xsrfToken;
 
     if (!accessToken || !xsrfToken) {
-      console.log("Error: Missing access token or xsrf token. Try again.");
+      console.log(
+        "Error: SSO response missing access token or xsrf token. Try again."
+      );
       res.sendFile(path.join(__dirname, "../loginPages/loginFail.html"));
       server_online = false;
       return;
     }
 
+    let domain, url;
+    try {
+      url = new URL(req.query.redirect as string);
+    } catch {}
+
+    if (!req.query.redirect || !url) {
+      res.sendFile(path.join(__dirname, "../loginPages/loginSuccess.html"));
+      const { host } = await inquirer.prompt([
+        {
+          name: "host",
+          message:
+            "Warning: SSO response did not contain a valid hostname. Please enter hostname of your Retool instance (ie: mycompany.retool.com)",
+          type: "input",
+        },
+      ]);
+      domain = host;
+    } else {
+      domain = url.port ? `${url.hostname}:${url.port}` : url.hostname;
+    }
+
     persistCredentials({
-      domain: "retool.com", //TODO: GRAB A REAL DOMAIN SOMEHOW
+      domain,
       accessToken,
       xsrf: xsrfToken,
     });
     console.log("Credentials saved/updated successfully!");
 
-    res.sendFile(path.join(__dirname, "../loginPages/loginSuccess.html"));
+    if (!res.headersSent) {
+      res.sendFile(path.join(__dirname, "../loginPages/loginSuccess.html"));
+    }
     server_online = false;
   });
   const server = await app.listen(3020);
 
+  // Step 1: Open up the google SSO page in the browser.
+  // Step 2: User accepts the SSO request.
   open(`https://login.retool.com/googlelogin?retoolCliRedirect=true`);
   // For local testing:
   // open("http://localhost:3000/googlelogin?retoolCliRedirect=true");
 
-  // Keep the server online until localhost:3020/auth is hit.
+  // Step 3: Keep the server online until localhost:3020/auth is hit.
   let server_online = true;
   while (server_online) {
     await new Promise((resolve) => setTimeout(resolve, 100));
