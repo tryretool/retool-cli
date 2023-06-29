@@ -104,28 +104,14 @@ async function loginViaEmail() {
   }
 
   // Step 2: Hit /auth/saveAuth with authorizationToken.
-  const auth = await fetch(authUrl, {
-    headers: {
-      ...httpHeaders,
-      origin: "https://login.retool.com",
-    },
-    body: JSON.stringify({ authorizationToken }),
-    method: "POST",
-  });
-  const authJson = await auth.json();
-  if (loginJson.error) {
-    console.log("Error logging in:");
-    console.log(loginJson);
-    return;
-  }
+  const { redirectUrl, accessToken, xsrf } = await saveAuth(
+    authorizationToken,
+    authUrl,
+    { ...httpHeaders, origin: "https://login.retool.com" }
+  ).catch();
 
   // Step 3: Persist the credentials.
-  const { redirectUri } = authJson; // Tip: authJson also contains a user object with lots of info.
-  const redirectUrl = new URL(redirectUri);
-  const accessToken = accessTokenFromCookie(auth.headers.get("Set-Cookie"));
-  const xsrf = xsrfTokenFromCookie(auth.headers.get("Set-Cookie"));
-
-  if (redirectUrl.hostname && accessToken && xsrf) {
+  if (redirectUrl?.hostname && accessToken && xsrf) {
     await persistCredentials({
       domain: redirectUrl.hostname,
       accessToken,
@@ -198,6 +184,7 @@ async function loginViaBrowser() {
   open(`https://login.retool.com/googlelogin?retoolCliRedirect=true`);
   // For local testing:
   // open("http://localhost:3000/googlelogin?retoolCliRedirect=true");
+  // open("https://login.retool-qa.com/googlelogin?retoolCliRedirect=true");
 
   // Step 3: Keep the server online until localhost:3020/auth is hit.
   let server_online = true;
@@ -206,4 +193,32 @@ async function loginViaBrowser() {
   }
 
   server.close();
+}
+
+async function saveAuth(
+  authorizationToken: string,
+  authUrl: string,
+  httpHeaders: any
+): Promise<{
+  redirectUrl: URL | undefined;
+  accessToken: string | undefined;
+  xsrf: string | undefined;
+}> {
+  const auth = await fetch(authUrl, {
+    headers: httpHeaders,
+    body: JSON.stringify({ authorizationToken }),
+    method: "POST",
+  });
+  const authJson = await auth.json();
+  if (authJson.error) {
+    console.log("Error logging in:");
+    console.log(authJson);
+    throw new Error();
+  }
+
+  const { redirectUri } = authJson; // Tip: authJson also contains a user object with lots of info.
+  const redirectUrl = redirectUri ? new URL(redirectUri) : undefined;
+  const accessToken = accessTokenFromCookie(auth.headers.get("Set-Cookie"));
+  const xsrf = xsrfTokenFromCookie(auth.headers.get("Set-Cookie"));
+  return { redirectUrl, accessToken, xsrf };
 }
