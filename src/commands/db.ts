@@ -5,7 +5,11 @@ const path = require("path");
 const ora = require("ora");
 
 import { parseCSV } from "../utils/csv";
-import { getCredentials, fetchDBCredentials } from "../utils/credentials";
+import {
+  getCredentials,
+  fetchDBCredentials,
+  Credentials,
+} from "../utils/credentials";
 import { logConnectionStringDetails } from "../utils/connectionString";
 
 export type FieldMapping = Array<{
@@ -20,28 +24,30 @@ exports.desc = "Interface with Retool DB";
 exports.builder = {
   new: {
     alias: "n",
-    describe: "Create a new Retool database from csv",
+    describe: "Create a new Retool DB from csv file.",
     type: "string",
     nargs: 1,
+  },
+  create: {
+    alias: "c",
+    describe: "Create a new Retool DB from column names.",
+    type: "array",
   },
 };
 exports.handler = async function (argv: any) {
   const spinner = ora("Verifying Retool DB credentials").start();
-  const credentials = getCredentials();
+  let credentials = getCredentials();
   if (!credentials) {
     spinner.stop();
     return;
   }
-  let { retoolDBUuid, gridId, hasConnectionString } = credentials;
-  if (!gridId || !retoolDBUuid) {
-    const dbCredentials = await fetchDBCredentials();
-    if (!dbCredentials) {
+  if (!credentials.gridId || !credentials.retoolDBUuid) {
+    await fetchDBCredentials();
+    credentials = getCredentials();
+    if (!credentials?.gridId || !credentials?.retoolDBUuid) {
       spinner.stop();
       return;
     }
-    retoolDBUuid = dbCredentials.retoolDBUuid;
-    gridId = dbCredentials.gridId;
-    hasConnectionString = dbCredentials.hasConnectionString;
   }
   spinner.stop();
 
@@ -82,61 +88,83 @@ exports.handler = async function (argv: any) {
       return;
     }
 
-    spinner = ora("Uploading CSV").start();
     const { headers, rows } = parseResult;
-    const fieldMapping: FieldMapping = headers.map((header) => ({
-      csvField: header,
-      dbField: header,
-      ignored: false,
-    }));
-
-    // See NewTable.tsx if implementing more complex logic.
-    const payload = {
-      kind: "CreateTable",
-      payload: {
-        name: tableName,
-        fieldMapping,
-        data: rows,
-        allowSchemaEditOverride: true,
-        primaryKey: {
-          kind: headers.includes("id")
-            ? "CustomColumn"
-            : "IntegerAutoIncrement",
-          name: "id",
-        },
-      },
-    };
-
-    const httpHeaders = {
-      accept: "application/json",
-      "content-type": "application/json",
-      "x-xsrf-token": credentials.xsrf,
-      cookie: `accessToken=${credentials.accessToken};`,
-    };
-
-    const createTableResponse = await fetch(
-      `https://${credentials.domain}/api/grid/${gridId}/action`,
+    await createTable(tableName, headers, rows, credentials);
+  }
+  // Handle `retool db --create <column-name> <column-name> ...`
+  else if (argv.create) {
+    let { tableName } = await inquirer.prompt([
       {
-        headers: httpHeaders,
-        body: JSON.stringify(payload),
-        method: "POST",
-      }
-    );
-    spinner.stop();
-    const createTableResponseJson = await createTableResponse.json();
-    if (createTableResponseJson.success) {
-      console.log("Successfully created a RetoolDB!");
-      console.log(
-        `View in browswer: https://${credentials.domain}/resources/data/${retoolDBUuid}/${tableName}?env=production`
-      );
-      if (hasConnectionString) {
-        await logConnectionStringDetails();
-      }
-    } else {
-      console.error(
-        "Failed to create a RetoolDB, error: ",
-        createTableResponseJson.error
-      );
-    }
+        name: "tableName",
+        message: "Table name? Hint: No spaces, use underscores.",
+        type: "input",
+      },
+    ]);
+    // Remove spaces from table name.
+    tableName = tableName.replace(/\s/g, "_");
+
+    await createTable(tableName, argv.create, undefined, credentials);
   }
 };
+
+async function createTable(
+  tableName: string,
+  headers: string[],
+  rows: string[][] | undefined,
+  credentials: Credentials
+) {
+  let spinner = ora("Uploading Table").start();
+  const fieldMapping: FieldMapping = headers.map((header) => ({
+    csvField: header,
+    dbField: header,
+    ignored: false,
+  }));
+
+  // See NewTable.tsx if implementing more complex logic.
+  let payload = {
+    kind: "CreateTable",
+    payload: {
+      name: tableName,
+      fieldMapping,
+      data: rows,
+      allowSchemaEditOverride: true,
+      primaryKey: {
+        kind: headers.includes("id") ? "CustomColumn" : "IntegerAutoIncrement",
+        name: "id",
+      },
+    },
+  };
+
+  const httpHeaders = {
+    accept: "application/json",
+    "content-type": "application/json",
+    "x-xsrf-token": credentials.xsrf,
+    cookie: `accessToken=${credentials.accessToken};`,
+  };
+
+  const createTableResponse = await fetch(
+    `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
+    {
+      headers: httpHeaders,
+      body: JSON.stringify(payload),
+      method: "POST",
+    }
+  );
+
+  spinner.stop();
+  const createTableResponseJson = await createTableResponse.json();
+  if (createTableResponseJson.success) {
+    console.log("Successfully created a RetoolDB!");
+    console.log(
+      `View in browswer: https://${credentials.domain}/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
+    );
+    if (credentials.hasConnectionString) {
+      await logConnectionStringDetails();
+    }
+  } else {
+    console.error(
+      "Failed to create a RetoolDB, error: ",
+      createTableResponseJson.error
+    );
+  }
+}

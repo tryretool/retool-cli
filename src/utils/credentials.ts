@@ -87,10 +87,8 @@ export function deleteCredentials() {
   });
 }
 
-export async function fetchDBCredentials(): Promise<
-  | { retoolDBUuid: string; gridId: string; hasConnectionString: boolean }
-  | undefined
-> {
+// Fetch gridId and retoolDBUuid from Retool. Persist to disk.
+export async function fetchDBCredentials() {
   const credentials = getCredentials();
   if (!credentials) {
     return;
@@ -115,6 +113,10 @@ export async function fetchDBCredentials(): Promise<
 
     // 2. Filter down to Retool DB UUID
     const allResources = await resources.json();
+    if (allResources.success === false) {
+      console.log(allResources);
+      return;
+    }
     const retoolDBs = allResources.resources.filter(
       (resource: any) => resource.displayName === "retool_db"
     );
@@ -129,25 +131,16 @@ export async function fetchDBCredentials(): Promise<
       }
     );
     const gridJson = await grid.json();
-
-    const updatedCredentials = {
+    await persistCredentials({
       ...credentials,
       retoolDBUuid,
       gridId: gridJson.gridInfo.id,
       hasConnectionString:
         gridJson.gridInfo.connectionString &&
         gridJson.gridInfo.connectionString.length > 0,
-    };
-    await persistCredentials(updatedCredentials);
-    return {
-      retoolDBUuid,
-      gridId: gridJson.gridInfo.id,
-      hasConnectionString:
-        gridJson.gridInfo.connectionString &&
-        gridJson.gridInfo.connectionString.length > 0,
-    };
+    });
   } catch (err: any) {
-    console.error("Error fetching RetoolDB grid id: ", err);
+    console.error("Error fetching RetoolDB credentials: ", err);
     return;
   }
 }
