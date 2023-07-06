@@ -133,8 +133,15 @@ async function loginViaBrowser() {
   // Step 4: Handle the SSO response.
   // Success scenario format: http://localhost:3020/auth?redirect=https://mycompany.retool.com
   app.get("/auth", async function (req, res) {
-    const accessToken = req.cookies?.accessToken;
-    const xsrfToken = req.cookies?.xsrfToken;
+    let domain, url, accessToken, xsrfToken;
+
+    try {
+      accessToken = decodeURIComponent(req.query.accessToken as string);
+      xsrfToken = decodeURIComponent(req.query.xsrfToken as string);
+      url = new URL(decodeURIComponent(req.query.redirect as string));
+    } catch (e) {
+      console.log(e);
+    }
 
     if (!accessToken || !xsrfToken) {
       console.log(
@@ -144,11 +151,6 @@ async function loginViaBrowser() {
       server_online = false;
       return;
     }
-
-    let domain, url;
-    try {
-      url = new URL(decodeURIComponent(req.query.redirect as string));
-    } catch {}
 
     if (!req.query.redirect || !url) {
       res.sendFile(path.join(__dirname, "../loginPages/loginSuccess.html"));
@@ -185,6 +187,7 @@ async function loginViaBrowser() {
   // For local testing:
   // open("http://localhost:3000/googlelogin?retoolCliRedirect=true");
   // open("https://login.retool-qa.com/googlelogin?retoolCliRedirect=true");
+  // open("https://admin.retool.dev/googlelogin?retoolCliRedirect=true");
 
   // Step 3: Keep the server online until localhost:3020/auth is hit.
   let server_online = true;
