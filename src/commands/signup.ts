@@ -53,7 +53,7 @@ exports.handler = async function (argv: any) {
   });
   spinner.stop();
   if (signupResponse.status !== 200) {
-    logHttpError(signupResponse);
+    await logHttpError(signupResponse);
     return;
   }
   const accessToken = accessTokenFromCookie(
@@ -63,7 +63,7 @@ exports.handler = async function (argv: any) {
     signupResponse.headers.get("Set-Cookie")
   );
   if (!accessToken || !xsrfToken) {
-    logHttpError(signupResponse);
+    await logHttpError(signupResponse);
     return;
   }
 
@@ -92,7 +92,7 @@ exports.handler = async function (argv: any) {
     }
   );
   if (initializeOrganizationResponse.status !== 200) {
-    logHttpError(initializeOrganizationResponse);
+    await logHttpError(initializeOrganizationResponse);
     return;
   }
 
@@ -175,7 +175,7 @@ async function collectName(
     }
   );
   if (changeNameResponse.status !== 200) {
-    logHttpError(changeNameResponse);
+    await logHttpError(changeNameResponse);
     return;
   }
 
@@ -206,7 +206,7 @@ async function collectOrg(authedHttpHeaders: any): Promise<string | undefined> {
   );
 
   if (checkSubdomainAvailabilityResponse.status !== 200) {
-    logHttpError(checkSubdomainAvailabilityResponse);
+    await logHttpError(checkSubdomainAvailabilityResponse);
     return;
   }
 

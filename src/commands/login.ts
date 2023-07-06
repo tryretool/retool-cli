@@ -132,6 +132,7 @@ async function loginViaBrowser() {
 
   // Step 4: Handle the SSO response.
   // Success scenario format: http://localhost:3020/auth?redirect=https://mycompany.retool.com
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   app.get("/auth", async function (req, res) {
     let domain, url, accessToken, xsrfToken;
 
@@ -179,7 +180,7 @@ async function loginViaBrowser() {
     }
     server_online = false;
   });
-  const server = await app.listen(3020);
+  const server = app.listen(3020);
 
   // Step 1: Open up the google SSO page in the browser.
   // Step 2: User accepts the SSO request.
