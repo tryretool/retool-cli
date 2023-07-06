@@ -44,13 +44,12 @@ export function askForCookies() {
 }
 
 // Persist credentials to disk at CREDENTIALS_PATH.
-export async function persistCredentials(credentials: Credentials) {
-  fs.writeFile(CREDENTIALS_PATH, JSON.stringify(credentials), (err: any) => {
-    if (err) {
-      console.error("Error saving credentials to disk: ", err);
-      return;
-    }
-  });
+export function persistCredentials(credentials: Credentials) {
+  try {
+    fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(credentials));
+  } catch (err) {
+    console.error("Error saving credentials to disk: ", err);
+  }
 }
 
 // Get credentials from disk.
@@ -59,8 +58,7 @@ export function getCredentials(): Credentials | undefined {
     console.log(`No credentials found! To login, run: retool login`);
     return;
   }
-  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
-  return credentials;
+  return JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
 }
 
 // Check if credentials exist on disk.
@@ -77,7 +75,7 @@ export function deleteCredentials() {
     return;
   }
 
-  fs.unlink(CREDENTIALS_PATH, (err: any) => {
+  fs.unlinkSync(CREDENTIALS_PATH, (err: any) => {
     if (err) {
       console.error("Error deleting credentials from disk: ", err);
       return;
@@ -131,13 +129,11 @@ export async function fetchDBCredentials() {
       }
     );
     const gridJson = await grid.json();
-    await persistCredentials({
+    persistCredentials({
       ...credentials,
       retoolDBUuid,
       gridId: gridJson.gridInfo.id,
-      hasConnectionString:
-        gridJson.gridInfo.connectionString &&
-        gridJson.gridInfo.connectionString.length > 0,
+      hasConnectionString: gridJson.gridInfo?.connectionString?.length > 0,
     });
   } catch (err: any) {
     console.error("Error fetching RetoolDB credentials: ", err);

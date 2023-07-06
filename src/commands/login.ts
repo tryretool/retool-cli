@@ -112,7 +112,7 @@ async function loginViaEmail() {
 
   // Step 3: Persist the credentials.
   if (redirectUrl?.hostname && accessToken && xsrf) {
-    await persistCredentials({
+    persistCredentials({
       domain: redirectUrl.hostname,
       accessToken,
       xsrf,
