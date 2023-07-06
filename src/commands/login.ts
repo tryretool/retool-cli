@@ -11,11 +11,11 @@ import {
   askForCookies,
 } from "../utils/credentials";
 import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
-import { url } from "inspector";
 
 exports.command = "login";
 exports.desc = "Log in to Retool";
 exports.builder = {};
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 exports.handler = async function (argv: any) {
   // Ask user if they want to overwrite existing credentials.
   if (doCredentialsExist()) {

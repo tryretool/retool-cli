@@ -64,7 +64,7 @@ exports.handler = async function (argv: any) {
     }
 
     //Default to csv filename if no table name is provided.
-    var tableName = path.basename(argv.new).slice(0, -4);
+    let tableName = path.basename(argv.new).slice(0, -4);
     const tableInput: { tableName: string } = await inquirer.prompt([
       {
         name: "tableName",
@@ -79,7 +79,7 @@ exports.handler = async function (argv: any) {
     // Remove spaces from table name.
     tableName = tableName.replace(/\s/g, "_");
 
-    let spinner = ora("Parsing CSV").start();
+    const spinner = ora("Parsing CSV").start();
     const parseResult = await parseCSV(argv.new);
     spinner.stop();
     if (!parseResult.success) {
@@ -113,7 +113,7 @@ async function createTable(
   rows: string[][] | undefined,
   credentials: Credentials
 ) {
-  let spinner = ora("Uploading Table").start();
+  const spinner = ora("Uploading Table").start();
   const fieldMapping: FieldMapping = headers.map((header) => ({
     csvField: header,
     dbField: header,
@@ -121,7 +121,7 @@ async function createTable(
   }));
 
   // See NewTable.tsx if implementing more complex logic.
-  let payload = {
+  const payload = {
     kind: "CreateTable",
     payload: {
       name: tableName,
