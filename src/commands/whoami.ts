@@ -1,10 +1,10 @@
 import { getCredentials } from "../utils/credentials";
 
-exports.command = "whoami";
-exports.desc = "Show current Retool user";
-exports.builder = {};
+export const command = "whoami";
+export const desc = "Show current Retool user";
+export const builder = {};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-exports.handler = function (argv: any) {
+export const handler = function (argv: any) {
   const credentials = getCredentials();
   if (credentials) {
     console.log("You are logged with credentials:");
