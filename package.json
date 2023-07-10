@@ -8,6 +8,7 @@
     "retool": "./lib/index.js"
   },
   "scripts": {
+    "dev": "tsc --watch -p .",
     "build": "npm run clean && tsc -p . && npm run copy-files && chmod +x lib/index.js",
     "clean": "rimraf lib/",
     "copy-files": "copyfiles -u 1 src/**/*.html lib/",
