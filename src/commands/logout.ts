@@ -1,9 +1,9 @@
 import { deleteCredentials } from "../utils/credentials";
 
-exports.command = "logout";
-exports.desc = "Log out of Retool";
-exports.builder = {};
+export const command = "logout";
+export const desc = "Log out of Retool";
+export const builder = {};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-exports.handler = function (argv: any) {
+export const handler = function (argv: any) {
   deleteCredentials();
 };
