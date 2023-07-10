@@ -19,9 +19,9 @@ export type FieldMapping = Array<{
   dbType?: string;
 }>;
 
-export const command = "db";
-export const desc = "Interface with Retool DB";
-export const builder = {
+const command = "db";
+const desc = "Interface with Retool DB";
+const builder = {
   new: {
     alias: "n",
     describe: "Create a new Retool DB from csv file.",
@@ -34,7 +34,7 @@ export const builder = {
     type: "array",
   },
 };
-export const handler = async function (argv: any) {
+const handler = async function (argv: any) {
   const spinner = ora("Verifying Retool DB credentials").start();
   let credentials = getCredentials();
   if (!credentials) {
@@ -168,3 +168,10 @@ async function createTable(
     );
   }
 }
+
+export default {
+  command,
+  desc,
+  builder,
+  handler,
+};

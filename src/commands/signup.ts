@@ -6,11 +6,11 @@ import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
 import { persistCredentials, doCredentialsExist } from "../utils/credentials";
 import { isEmailValid } from "../utils/emailValidation";
 
-export const command = "signup";
-export const desc = "Create a Retool account";
-export const builder = {};
+const command = "signup";
+const desc = "Create a Retool account";
+const builder = {};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const handler = async function (argv: any) {
+const handler = async function (argv: any) {
   // Ask user if they want to overwrite existing credentials.
   if (doCredentialsExist()) {
     const { overwrite } = await inquirer.prompt([
@@ -218,3 +218,5 @@ async function logHttpError(httpRes: any) {
   console.log("Please try again.");
   console.log(error);
 }
+
+export default { command, desc, builder, handler };

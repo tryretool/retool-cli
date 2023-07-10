@@ -5,10 +5,10 @@ const exec = util.promisify(_exec);
 
 import ora from "ora";
 
-export const command = "scaffold";
-export const desc = "Scaffold a new custom component";
-export const builder = {};
-export const handler = async function () {
+const command = "scaffold";
+const desc = "Scaffold a new custom component";
+const builder = {};
+const handler = async function () {
   const spinner = ora("Scaffolding a new custom component").start();
   await exec(
     "git clone https://github.com/tryretool/custom-component-guide.git"
@@ -17,4 +17,11 @@ export const handler = async function () {
   console.log(
     "Scaffolded a new custom component in the custom-component-guide directory."
   );
+};
+
+export default {
+  command,
+  desc,
+  builder,
+  handler,
 };

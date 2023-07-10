@@ -12,11 +12,11 @@ import {
 } from "../utils/credentials";
 import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
 
-export const command = "login";
-export const desc = "Log in to Retool";
-export const builder = {};
+const command = "login";
+const desc = "Log in to Retool";
+const builder = {};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const handler = async function (argv: any) {
+const handler = async function (argv: any) {
   // Ask user if they want to overwrite existing credentials.
   if (doCredentialsExist()) {
     const { overwrite } = await inquirer.prompt([
@@ -226,3 +226,10 @@ async function saveAuth(
   const xsrf = xsrfTokenFromCookie(auth.headers.get("Set-Cookie"));
   return { redirectUrl, accessToken, xsrf };
 }
+
+export default {
+  command,
+  desc,
+  builder,
+  handler,
+};
