@@ -4,9 +4,10 @@ import { exec as _exec } from "child_process";
 const exec = util.promisify(_exec);
 
 import ora from "ora";
+import { CommandModule } from "yargs";
 
 const command = "scaffold";
-const desc = "Scaffold a new custom component";
+const describe = "Scaffold a new custom component";
 const builder = {};
 const handler = async function () {
   const spinner = ora("Scaffolding a new custom component").start();
@@ -19,9 +20,11 @@ const handler = async function () {
   );
 };
 
-export default {
+const commandModule: CommandModule = {
   command,
-  desc,
+  describe,
   builder,
   handler,
 };
+
+export default commandModule;

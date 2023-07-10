@@ -2,12 +2,13 @@ const fetch = require("node-fetch");
 const inquirer = require("inquirer");
 const ora = require("ora");
 
+import { CommandModule } from "yargs";
 import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
 import { persistCredentials, doCredentialsExist } from "../utils/credentials";
 import { isEmailValid } from "../utils/emailValidation";
 
 const command = "signup";
-const desc = "Create a Retool account";
+const describe = "Create a Retool account";
 const builder = {};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handler = async function (argv: any) {
@@ -219,4 +220,5 @@ async function logHttpError(httpRes: any) {
   console.log(error);
 }
 
-export default { command, desc, builder, handler };
+const commandModule: CommandModule = { command, describe, builder, handler };
+export default commandModule;

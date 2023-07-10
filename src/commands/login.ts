@@ -11,9 +11,10 @@ import {
   askForCookies,
 } from "../utils/credentials";
 import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
+import { CommandModule } from "yargs";
 
 const command = "login";
-const desc = "Log in to Retool";
+const describe = "Log in to Retool";
 const builder = {};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handler = async function (argv: any) {
@@ -227,9 +228,11 @@ async function saveAuth(
   return { redirectUrl, accessToken, xsrf };
 }
 
-export default {
+const commandModule: CommandModule = {
   command,
-  desc,
+  describe,
   builder,
   handler,
 };
+
+export default commandModule;

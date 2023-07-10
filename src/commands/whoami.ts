@@ -1,7 +1,8 @@
+import { CommandModule } from "yargs";
 import { getCredentials } from "../utils/credentials";
 
 const command = "whoami";
-const desc = "Show current Retool user";
+const describe = "Show current Retool user";
 const builder = {};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handler = function (argv: any) {
@@ -12,4 +13,11 @@ const handler = function (argv: any) {
   }
 };
 
-export default { command, desc, builder, handler };
+const commandModule: CommandModule = {
+  command,
+  describe,
+  builder,
+  handler,
+};
+
+export default commandModule;

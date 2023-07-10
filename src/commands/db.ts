@@ -11,6 +11,7 @@ import {
   Credentials,
 } from "../utils/credentials";
 import { logConnectionStringDetails } from "../utils/connectionString";
+import { CommandModule } from "yargs";
 
 export type FieldMapping = Array<{
   csvField: string;
@@ -20,8 +21,8 @@ export type FieldMapping = Array<{
 }>;
 
 const command = "db";
-const desc = "Interface with Retool DB";
-const builder = {
+const describe = "Interface with Retool DB";
+const builder: CommandModule["builder"] = {
   new: {
     alias: "n",
     describe: "Create a new Retool DB from csv file.",
@@ -169,9 +170,11 @@ async function createTable(
   }
 }
 
-export default {
+const commandModule: CommandModule = {
   command,
-  desc,
+  describe,
   builder,
   handler,
 };
+
+export default commandModule;
