@@ -7,105 +7,6 @@ import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
 import { persistCredentials, doCredentialsExist } from "../utils/credentials";
 import { isEmailValid } from "../utils/emailValidation";
 
-const command = "signup";
-const describe = "Create a Retool account";
-const builder = {};
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const handler = async function (argv: any) {
-  // Ask user if they want to overwrite existing credentials.
-  if (doCredentialsExist()) {
-    const { overwrite } = await inquirer.prompt([
-      {
-        name: "overwrite",
-        message:
-          "You're already logged into Retool. Do you want to log out and create a new account?",
-        type: "confirm",
-      },
-    ]);
-    if (!overwrite) {
-      return;
-    }
-  }
-
-  // Step 1: Collect a valid email/password.
-  let email, password, name, org;
-  while (!email) {
-    email = await collectEmail();
-  }
-  while (!password) {
-    password = await colllectPassword();
-  }
-
-  // Step 2: Call signup endpoint, get cookies.
-  const spinner = ora("Verifying email/password validity on server").start();
-  const body = JSON.stringify({
-    email,
-    password,
-    planKey: "free",
-  });
-  const httpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-  };
-  const signupResponse = await fetch(`https://login.retool.com/api/signup`, {
-    headers: httpHeaders,
-    body,
-    method: "POST",
-  });
-  spinner.stop();
-  if (signupResponse.status !== 200) {
-    await logHttpError(signupResponse);
-    return;
-  }
-  const accessToken = accessTokenFromCookie(
-    signupResponse.headers.get("Set-Cookie")
-  );
-  const xsrfToken = xsrfTokenFromCookie(
-    signupResponse.headers.get("Set-Cookie")
-  );
-  if (!accessToken || !xsrfToken) {
-    await logHttpError(signupResponse);
-    return;
-  }
-
-  const authedHttpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-    "x-xsrf-token": xsrfToken,
-    cookie: `accessToken=${accessToken};`,
-  };
-
-  // Step 3: Collect a valid name/org.
-  while (!name) {
-    name = await collectName(authedHttpHeaders);
-  }
-  while (!org) {
-    org = await collectOrg(authedHttpHeaders);
-  }
-
-  // Step 4: Initialize organization.
-  const initializeOrganizationResponse = await fetch(
-    `https://login.retool.com/api/organization/admin/initializeOrganization`,
-    {
-      headers: authedHttpHeaders,
-      body: JSON.stringify({ subdomain: org }),
-      method: "POST",
-    }
-  );
-  if (initializeOrganizationResponse.status !== 200) {
-    await logHttpError(initializeOrganizationResponse);
-    return;
-  }
-
-  // Step 5: Persist credentials
-  console.log("Account created successfully!");
-  persistCredentials({
-    accessToken,
-    xsrf: xsrfToken,
-    domain: `${org}.retool.com`,
-  });
-};
-
 async function collectEmail(): Promise<string | undefined> {
   const { email } = await inquirer.prompt([
     {
@@ -121,7 +22,7 @@ async function collectEmail(): Promise<string | undefined> {
   return email;
 }
 
-async function colllectPassword(): Promise<string | undefined> {
+async function collectPassword(): Promise<string | undefined> {
   const { password } = await inquirer.prompt([
     {
       name: "password",
@@ -220,5 +121,103 @@ async function logHttpError(httpRes: any) {
   console.log(error);
 }
 
-const commandModule: CommandModule = { command, describe, builder, handler };
+const commandModule: CommandModule = {
+  command: "signup",
+  describe: "Create a Retool account",
+  builder: {},
+  handler: async function () {
+    // Ask user if they want to overwrite existing credentials.
+    if (doCredentialsExist()) {
+      const { overwrite } = await inquirer.prompt([
+        {
+          name: "overwrite",
+          message:
+            "You're already logged into Retool. Do you want to log out and create a new account?",
+          type: "confirm",
+        },
+      ]);
+      if (!overwrite) {
+        return;
+      }
+    }
+
+    // Step 1: Collect a valid email/password.
+    let email, password, name, org;
+    while (!email) {
+      email = await collectEmail();
+    }
+    while (!password) {
+      password = await collectPassword();
+    }
+
+    // Step 2: Call signup endpoint, get cookies.
+    const spinner = ora("Verifying email/password validity on server").start();
+    const body = JSON.stringify({
+      email,
+      password,
+      planKey: "free",
+    });
+    const httpHeaders = {
+      accept: "application/json",
+      "content-type": "application/json",
+    };
+    const signupResponse = await fetch(`https://login.retool.com/api/signup`, {
+      headers: httpHeaders,
+      body,
+      method: "POST",
+    });
+    spinner.stop();
+    if (signupResponse.status !== 200) {
+      await logHttpError(signupResponse);
+      return;
+    }
+    const accessToken = accessTokenFromCookie(
+      signupResponse.headers.get("Set-Cookie")
+    );
+    const xsrfToken = xsrfTokenFromCookie(
+      signupResponse.headers.get("Set-Cookie")
+    );
+    if (!accessToken || !xsrfToken) {
+      await logHttpError(signupResponse);
+      return;
+    }
+
+    const authedHttpHeaders = {
+      accept: "application/json",
+      "content-type": "application/json",
+      "x-xsrf-token": xsrfToken,
+      cookie: `accessToken=${accessToken};`,
+    };
+
+    // Step 3: Collect a valid name/org.
+    while (!name) {
+      name = await collectName(authedHttpHeaders);
+    }
+    while (!org) {
+      org = await collectOrg(authedHttpHeaders);
+    }
+
+    // Step 4: Initialize organization.
+    const initializeOrganizationResponse = await fetch(
+      `https://login.retool.com/api/organization/admin/initializeOrganization`,
+      {
+        headers: authedHttpHeaders,
+        body: JSON.stringify({ subdomain: org }),
+        method: "POST",
+      }
+    );
+    if (initializeOrganizationResponse.status !== 200) {
+      await logHttpError(initializeOrganizationResponse);
+      return;
+    }
+
+    // Step 5: Persist credentials
+    console.log("Account created successfully!");
+    persistCredentials({
+      accessToken,
+      xsrf: xsrfToken,
+      domain: `${org}.retool.com`,
+    });
+  },
+};
 export default commandModule;

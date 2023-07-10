@@ -1,23 +1,17 @@
 import { CommandModule } from "yargs";
 import { getCredentials } from "../utils/credentials";
 
-const command = "whoami";
-const describe = "Show current Retool user";
-const builder = {};
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const handler = function (argv: any) {
-  const credentials = getCredentials();
-  if (credentials) {
-    console.log("You are logged with credentials:");
-    console.log(credentials);
-  }
-};
-
 const commandModule: CommandModule = {
-  command,
-  describe,
-  builder,
-  handler,
+  command: "whoami",
+  describe: "Show current Retool user",
+  builder: {},
+  handler: function () {
+    const credentials = getCredentials();
+    if (credentials) {
+      console.log("You are logged with credentials:");
+      console.log(credentials);
+    }
+  },
 };
 
 export default commandModule;
