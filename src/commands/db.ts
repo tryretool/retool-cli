@@ -11,6 +11,7 @@ import {
   Credentials,
 } from "../utils/credentials";
 import { logConnectionStringDetails } from "../utils/connectionString";
+import { CommandModule } from "yargs";
 
 export type FieldMapping = Array<{
   csvField: string;
@@ -19,9 +20,9 @@ export type FieldMapping = Array<{
   dbType?: string;
 }>;
 
-export const command = "db";
-export const desc = "Interface with Retool DB";
-export const builder = {
+const command = "db";
+const describe = "Interface with Retool DB";
+const builder: CommandModule["builder"] = {
   new: {
     alias: "n",
     describe: "Create a new Retool DB from csv file.",
@@ -34,7 +35,7 @@ export const builder = {
     type: "array",
   },
 };
-export const handler = async function (argv: any) {
+const handler = async function (argv: any) {
   const spinner = ora("Verifying Retool DB credentials").start();
   let credentials = getCredentials();
   if (!credentials) {
@@ -168,3 +169,12 @@ async function createTable(
     );
   }
 }
+
+const commandModule: CommandModule = {
+  command,
+  describe,
+  builder,
+  handler,
+};
+
+export default commandModule;

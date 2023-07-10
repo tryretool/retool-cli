@@ -4,11 +4,12 @@ import { exec as _exec } from "child_process";
 const exec = util.promisify(_exec);
 
 import ora from "ora";
+import { CommandModule } from "yargs";
 
-export const command = "scaffold";
-export const desc = "Scaffold a new custom component";
-export const builder = {};
-export const handler = async function () {
+const command = "scaffold";
+const describe = "Scaffold a new custom component";
+const builder = {};
+const handler = async function () {
   const spinner = ora("Scaffolding a new custom component").start();
   await exec(
     "git clone https://github.com/tryretool/custom-component-guide.git"
@@ -18,3 +19,12 @@ export const handler = async function () {
     "Scaffolded a new custom component in the custom-component-guide directory."
   );
 };
+
+const commandModule: CommandModule = {
+  command,
+  describe,
+  builder,
+  handler,
+};
+
+export default commandModule;
