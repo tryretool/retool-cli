@@ -108,7 +108,7 @@ const handler = async function (argv: any) {
   }
 };
 
-async function createTable(
+export async function createTable(
   tableName: string,
   headers: string[],
   rows: string[][] | undefined,
