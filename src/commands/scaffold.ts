@@ -3,6 +3,7 @@ const ora = require("ora");
 import { getCredentials, fetchDBCredentials } from "../utils/credentials";
 import { createTable } from "./db";
 import { CommandModule } from "yargs";
+import { generateApp } from "../utils/apps";
 import { generateWorkflow } from "../utils/workflows";
 
 const command = "scaffold";
@@ -38,7 +39,10 @@ const handler = async function (argv: any) {
   spinner.stop();
 
   await createTable(argv.name, argv.columns, undefined, credentials);
+  console.log("\n");
   await generateWorkflow(argv.name);
+  console.log("\n");
+  await generateApp(argv.name);
 };
 
 const commandModule: CommandModule = {
