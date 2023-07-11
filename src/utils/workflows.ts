@@ -5,15 +5,14 @@ import { generateWorkflowMetadata } from "./puppeteer";
 import { getCredentials } from "./credentials";
 
 // Generates a CRUD workflow from a template.
-export async function generateWorkflow() {
+export async function generateWorkflow(tableName: string) {
   const credentials = getCredentials();
   if (!credentials) {
     return;
   }
 
   const spinner = ora("Creating workflow").start();
-  // TODO: Pass in table name
-  const workflowMeta = await generateWorkflowMetadata("TABLE_NAME");
+  const workflowMeta = await generateWorkflowMetadata(tableName);
 
   const payload = {
     name: workflowMeta.name,

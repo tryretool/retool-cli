@@ -84,21 +84,33 @@ export const generateWorkflowMetadata = async (tableName: string) => {
 
     // Call window.generateWorkflowFromTemplateData() on the page
     const generatedWorkflowMetadata = await page.evaluate(
-      (tableName: string, workflowTemplate: WorkflowTemplateType) => {
-        // Replaces instances of "name_placeholder" with the table name
+      (
+        tableName: string,
+        workflowTemplate: WorkflowTemplateType,
+        retoolDBUuid: string
+      ) => {
+        // Replaces instances of "name_placeholder" with the newly created table name
         workflowTemplate.map((item) => {
-          if (item.pluginTemplate?.template?.tableName === "name_placeholder") {
+          if (item.pluginTemplate.template.tableName === "name_placeholder") {
             item.pluginTemplate.template.tableName = tableName;
           }
-
-          if (
-            item.pluginTemplate?.template?.query.includes("name_placeholder")
-          ) {
+          if (item.pluginTemplate.template.query.includes("name_placeholder")) {
             item.pluginTemplate.template.query =
               item.pluginTemplate.template.query.replace(
                 "name_placeholder",
                 tableName
               );
+          }
+
+          // Inject retool DB UUID
+          if (
+            item.block.pluginId === "createQuery" ||
+            item.block.pluginId === "readQuery" ||
+            item.block.pluginId === "updateQuery" ||
+            item.block.pluginId === "destroyQuery"
+          ) {
+            item.block.resourceName = retoolDBUuid;
+            item.pluginTemplate.resourceName = retoolDBUuid;
           }
         });
 
@@ -112,7 +124,8 @@ export const generateWorkflowMetadata = async (tableName: string) => {
         return workflow;
       },
       tableName,
-      workflowTemplate
+      workflowTemplate,
+      credentials.retoolDBUuid
     );
 
     await browser.close();

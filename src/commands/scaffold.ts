@@ -38,7 +38,7 @@ const handler = async function (argv: any) {
   spinner.stop();
 
   await createTable(argv.name, argv.columns, undefined, credentials);
-  await generateWorkflow();
+  await generateWorkflow(argv.name);
 };
 
 const commandModule: CommandModule = {
