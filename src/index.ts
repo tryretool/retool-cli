@@ -7,7 +7,6 @@ require("yargs/yargs")(process.argv.slice(2))
     },
   })
   .demandCommand()
-  .showHelpOnFail(false)
   .strict()
   .usage(
     "A CLI tool to interface with Retool. For feedback and issues visit https://github.com/tryretool/retool-cli.\n\nUsage: retool <command>"

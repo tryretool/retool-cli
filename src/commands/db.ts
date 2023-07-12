@@ -23,6 +23,12 @@ export type FieldMapping = Array<{
 const command = "db";
 const describe = "Interface with Retool DB.";
 const builder: CommandModule["builder"] = {
+  create: {
+    alias: "c",
+    describe: `Create a new Retool DB from column names. Usage:
+    retool db -c <col1> <col2> ...`,
+    type: "array",
+  },
   new: {
     alias: "n",
     describe: `Create a new Retool DB from csv file. Usage:
@@ -30,11 +36,9 @@ const builder: CommandModule["builder"] = {
     type: "string",
     nargs: 1,
   },
-  create: {
-    alias: "c",
-    describe: `Create a new Retool DB from column names. Usage:
-    retool db -c <col1> <col2> ...`,
-    type: "array",
+  list: {
+    alias: "l",
+    describe: "List all Retool DBs.",
   },
 };
 const handler = async function (argv: any) {
@@ -112,6 +116,38 @@ const handler = async function (argv: any) {
     tableName = tableName.replace(/\s/g, "_");
 
     await createTable(tableName, argv.create, undefined, credentials);
+  }
+  // Handle `retool db --list`
+  else if (argv.list) {
+    const spinner = ora("Fetching Retool DBs").start();
+    const httpHeaders = {
+      accept: "application/json",
+      "content-type": "application/json",
+      "x-xsrf-token": credentials.xsrf,
+      cookie: `accessToken=${credentials.accessToken};`,
+    };
+
+    const fetchDBsResponse = await fetch(
+      `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`,
+      {
+        headers: httpHeaders,
+        method: "GET",
+      }
+    );
+
+    spinner.stop();
+    const fetchDBsResponseJson = await fetchDBsResponse.json();
+    if (fetchDBsResponseJson.success) {
+      const { tables } = fetchDBsResponseJson.gridInfo;
+      if (tables?.length > 0) {
+        console.log("Retool DBs:");
+        tables.forEach((table: any) => {
+          console.log(table.name);
+        });
+        return;
+      }
+    }
+    console.log("No Retool DBs found.");
   }
 };
 
