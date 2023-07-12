@@ -44,7 +44,7 @@ const handler = async function (argv: any) {
           value: "email",
         },
         {
-          name: "Log in via Google SSO in a web browser (WIP)",
+          name: "Log in via Google SSO in a web browser",
           value: "browser",
         },
         {

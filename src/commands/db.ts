@@ -68,16 +68,15 @@ const handler = async function (argv: any) {
 
     //Default to csv filename if no table name is provided.
     let tableName = path.basename(argv.new).slice(0, -4);
-    const tableInput: { tableName: string } = await inquirer.prompt([
+    const inputName = await inquirer.prompt([
       {
-        name: "tableName",
-        message:
-          "Table name? If blank, defaults to csv filename. \n  Hint: No spaces, use underscores.",
+        name: "inputName",
+        message: "Table name? If blank, defaults to csv filename.",
         type: "input",
       },
     ]);
-    if (tableInput.tableName && tableInput.tableName.length > 0) {
-      tableName = tableInput.tableName;
+    if (inputName.length > 0) {
+      tableName = inputName;
     }
     // Remove spaces from table name.
     tableName = tableName.replace(/\s/g, "_");
@@ -99,10 +98,16 @@ const handler = async function (argv: any) {
     let { tableName } = await inquirer.prompt([
       {
         name: "tableName",
-        message: "Table name? Hint: No spaces, use underscores.",
+        message: "Table name?",
         type: "input",
       },
     ]);
+
+    if (tableName.length === 0) {
+      console.log("Error: Table name cannot be blank.");
+      return;
+    }
+
     // Remove spaces from table name.
     tableName = tableName.replace(/\s/g, "_");
 
