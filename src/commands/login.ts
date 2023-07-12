@@ -14,7 +14,7 @@ import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
 import { CommandModule } from "yargs";
 
 const command = "login";
-const describe = "Log in to Retool";
+const describe = "Log in to Retool.";
 const builder = {};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handler = async function (argv: any) {
@@ -23,8 +23,7 @@ const handler = async function (argv: any) {
     const { overwrite } = await inquirer.prompt([
       {
         name: "overwrite",
-        message:
-          "You're already logged into Retool. Do you want to re-authenticate?",
+        message: "You're already logged in. Do you want to re-authenticate?",
         type: "confirm",
       },
     ]);

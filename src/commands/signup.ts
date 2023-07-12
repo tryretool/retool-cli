@@ -8,7 +8,7 @@ import { persistCredentials, doCredentialsExist } from "../utils/credentials";
 import { isEmailValid } from "../utils/emailValidation";
 
 const command = "signup";
-const describe = "Create a Retool account";
+const describe = "Create a Retool account.";
 const builder = {};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handler = async function (argv: any) {

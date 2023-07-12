@@ -21,17 +21,19 @@ export type FieldMapping = Array<{
 }>;
 
 const command = "db";
-const describe = "Interface with Retool DB";
+const describe = "Interface with Retool DB.";
 const builder: CommandModule["builder"] = {
   new: {
     alias: "n",
-    describe: "Create a new Retool DB from csv file.",
+    describe: `Create a new Retool DB from csv file. Usage:
+    retool db -n <path-to-csv>`,
     type: "string",
     nargs: 1,
   },
   create: {
     alias: "c",
-    describe: "Create a new Retool DB from column names.",
+    describe: `Create a new Retool DB from column names. Usage:
+    retool db -c <col1> <col2> ...`,
     type: "array",
   },
 };
