@@ -200,6 +200,8 @@ const handler = async function (argv: any) {
       return;
     }
 
+    const spinner = ora(`Fetching ${argv.gendata} metadata`).start();
+
     //Fetch db schema and data.
     const httpHeaders = {
       accept: "application/json",
@@ -228,8 +230,8 @@ const handler = async function (argv: any) {
     spinner.stop();
     const fetchDBInfoJson: DBInfoPayload = await fetchDBInfo.json();
     const fetchDBDataText: string = await fetchDBData.text();
-    if ("error" in fetchDBInfoJson || fetchDBDataText?.length === 0) {
-      console.log("Error fetching Retool DB");
+    if ("error" in fetchDBInfoJson) {
+      console.log("Error fetching Retool DB:");
       console.log(fetchDBInfoJson);
       return;
     }
@@ -284,7 +286,8 @@ const handler = async function (argv: any) {
       ...parsedDBData
         .slice(1)
         .map((row) => row[primaryKeyColIndex])
-        .map((id) => parseInt(id))
+        .map((id) => parseInt(id)),
+      0
     );
 
     // Generate mock data.
@@ -313,7 +316,7 @@ const handler = async function (argv: any) {
     if (bulkInsertResponseJson.success) {
       console.log("Successfully inserted data.");
     } else {
-      console.log("Error fetching Retool DB");
+      console.log("Error inserting to Retool DB");
       console.log(bulkInsertResponseJson);
       return;
     }
@@ -326,16 +329,22 @@ const handler = async function (argv: any) {
 // transform to:
 // [["col_1","col_2","col_3"],["val_1","val_2","val_3"]]
 function parseDBData(data: string): string[][] {
-  let rows = data.trim().split("\n");
-  // Remove all quotes and [] brackets.
-  rows = rows.map((row: string) =>
-    row.replace(/"/g, "").replace(/\[/g, "").replace(/\]/g, "")
-  );
-  const parsedRows: string[][] = [];
-  for (let i = 0; i < rows.length; i++) {
-    parsedRows.push(rows[i].split(","));
+  try {
+    let rows = data.trim().split("\n");
+    // Remove all quotes and [] brackets.
+    rows = rows.map((row: string) =>
+      row.replace(/"/g, "").replace(/\[/g, "").replace(/\]/g, "")
+    );
+    const parsedRows: string[][] = [];
+    for (let i = 0; i < rows.length; i++) {
+      parsedRows.push(rows[i].split(","));
+    }
+    return parsedRows;
+  } catch (e) {
+    console.log("Error parsing DB data.");
+    console.log(e);
+    process.exit(1);
   }
-  return parsedRows;
 }
 
 function generateData(
