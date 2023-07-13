@@ -34,7 +34,6 @@ export async function generateApp(tableName: string) {
   spinner.stop();
 
   const appRes = await app.json();
-  console.log(appRes);
   if (appRes.newPage?.uuid) {
     console.log("App created successfully!");
     console.log(

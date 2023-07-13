@@ -156,7 +156,7 @@ const handler = async function (argv: any) {
     }
 
     const { headers, rows } = parseResult;
-    await createTable(tableName, headers, rows, credentials);
+    await createTable(tableName, headers, rows, credentials, true);
   }
   // Handle `retool db --create <column-name> <column-name> ...`
   else if (argv.create) {
@@ -176,7 +176,7 @@ const handler = async function (argv: any) {
     // Remove spaces from table name.
     tableName = tableName.replace(/\s/g, "_");
 
-    await createTable(tableName, argv.create, undefined, credentials);
+    await createTable(tableName, argv.create, undefined, credentials, true);
   }
   // Handle `retool db --list`
   else if (argv.list) {
@@ -434,7 +434,8 @@ export async function createTable(
   tableName: string,
   headers: string[],
   rows: string[][] | undefined,
-  credentials: Credentials
+  credentials: Credentials,
+  printConnectionString: boolean
 ) {
   const spinner = ora("Uploading Table").start();
   const fieldMapping: FieldMapping = headers.map((header) => ({
@@ -481,7 +482,7 @@ export async function createTable(
     console.log(
       `View in browswer: https://${credentials.domain}/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
     );
-    if (credentials.hasConnectionString) {
+    if (credentials.hasConnectionString && printConnectionString) {
       await logConnectionStringDetails();
     }
   } else {

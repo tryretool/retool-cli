@@ -40,7 +40,8 @@ const handler = async function (argv: any) {
   }
   spinner.stop();
 
-  await createTable(argv.name, argv.columns, undefined, credentials);
+  await createTable(argv.name, argv.columns, undefined, credentials, false);
+  console.log(`Generate mock data with: \`retool db --gendata ${argv.name}\``);
   console.log("\n");
   await generateWorkflow(argv.name);
   console.log("\n");
