@@ -39,6 +39,41 @@ type BulkInsertIntoTablePayload = {
   };
 };
 
+type DBInfoPayload =
+  | {
+      error: true;
+      message: string;
+    }
+  | {
+      success: true;
+      tableInfo: RetoolDBTableInfo;
+    };
+
+// This type is returned from Retool table/info API endpoint.
+type RetoolDBTableInfo = {
+  fields: Array<RetoolDBField>;
+  primaryKeyColumn: string;
+  totalRowCount: number;
+};
+
+// A "field" is a single Retool DB column.
+type RetoolDBField = {
+  name: string;
+  columnDefault:
+    | {
+        kind: "NoDefault";
+      }
+    | {
+        kind: "LiteralDefault";
+        value: string;
+      }
+    | {
+        kind: "ExpressionDefault";
+        value: string;
+      };
+  generatedColumnType: GeneratedColumnType | undefined;
+};
+
 const command = "db";
 const describe = "Interface with Retool DB.";
 const builder: CommandModule["builder"] = {
@@ -191,9 +226,9 @@ const handler = async function (argv: any) {
     );
 
     spinner.stop();
-    const fetchDBInfoJson = await fetchDBInfo.json();
-    const fetchDBDataText = await fetchDBData.text();
-    if (!fetchDBInfoJson.success || fetchDBDataText?.length === 0) {
+    const fetchDBInfoJson: DBInfoPayload = await fetchDBInfo.json();
+    const fetchDBDataText: string = await fetchDBData.text();
+    if ("error" in fetchDBInfoJson || fetchDBDataText?.length === 0) {
       console.log("Error fetching Retool DB");
       console.log(fetchDBInfoJson);
       return;
@@ -233,7 +268,8 @@ const handler = async function (argv: any) {
           ],
         },
       ]);
-      fields[i].generatedType = coerceToGeneratedColumnType(generatedType);
+      fields[i].generatedColumnType =
+        coerceToGeneratedColumnType(generatedType);
     }
 
     // Find the max primary key value.
@@ -335,8 +371,8 @@ function generateData(
   };
 }
 
-function generateDataForColumn(field: any): string {
-  switch (field.generatedType) {
+function generateDataForColumn(field: RetoolDBField): string {
+  switch (field.generatedColumnType) {
     case "name":
       return faker.person.fullName();
     case "address":
