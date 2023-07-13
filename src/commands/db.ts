@@ -20,6 +20,24 @@ export type FieldMapping = Array<{
   dbType?: string;
 }>;
 
+type GeneratedColumnType =
+  | "name"
+  | "address"
+  | "phoneNumber"
+  | "emailAddress"
+  | "date"
+  | "uuid"
+  | "lorem-ipsum";
+
+type BulkInsertIntoTablePayload = {
+  kind: "BulkInsertIntoTable";
+  tableName: string;
+  additions: {
+    data: string[][];
+    fields: string[];
+  };
+};
+
 const command = "db";
 const describe = "Interface with Retool DB.";
 const builder: CommandModule["builder"] = {
@@ -33,6 +51,13 @@ const builder: CommandModule["builder"] = {
     alias: "n",
     describe: `Create a new Retool DB from csv file. Usage:
     retool db -n <path-to-csv>`,
+    type: "string",
+    nargs: 1,
+  },
+  gendata: {
+    alias: "g",
+    describe: `Generate data for a Retool DB interactively. Usage:
+    retool db -g <db-name>`,
     type: "string",
     nargs: 1,
   },
@@ -119,37 +144,151 @@ const handler = async function (argv: any) {
   }
   // Handle `retool db --list`
   else if (argv.list) {
-    const spinner = ora("Fetching Retool DBs").start();
+    const tables = await fetchAllTables(credentials);
+    if (tables?.length > 0) {
+      console.log("Retool DBs:");
+      tables.forEach((table: any) => {
+        console.log(table.name);
+      });
+      return;
+    }
+    console.log("No Retool DBs found.");
+  }
+  // Handle `retool db --gendata <db-name>`
+  else if (argv.gendata) {
+    // Verify that the provided db name exists.
+    const tables = await fetchAllTables(credentials);
+    if (!tables?.map((table: any) => table.name).includes(argv.gendata)) {
+      console.log(`No Retool DB named ${argv.gendata} found.`);
+      console.log(`Use \`retool db --list\` to list all Retool DBs.`);
+      return;
+    }
+
+    //Fetch the db schema.
     const httpHeaders = {
       accept: "application/json",
       "content-type": "application/json",
       "x-xsrf-token": credentials.xsrf,
       cookie: `accessToken=${credentials.accessToken};`,
     };
-
-    const fetchDBsResponse = await fetch(
-      `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`,
+    const fetchDBResponse = await fetch(
+      `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${argv.gendata}/info`,
       {
         headers: httpHeaders,
         method: "GET",
       }
     );
-
     spinner.stop();
-    const fetchDBsResponseJson = await fetchDBsResponse.json();
-    if (fetchDBsResponseJson.success) {
-      const { tables } = fetchDBsResponseJson.gridInfo;
-      if (tables?.length > 0) {
-        console.log("Retool DBs:");
-        tables.forEach((table: any) => {
-          console.log(table.name);
-        });
-        return;
-      }
+    const fetchDBResponseJson = await fetchDBResponse.json();
+    if (!fetchDBResponseJson.success) {
+      console.log("Error fetching Retool DB");
+      console.log(fetchDBResponseJson);
+      return;
     }
-    console.log("No Retool DBs found.");
+
+    // Ask how many rows to generate.
+    // TODO: Enforce this.
+    const MAX_BATCH_SIZE = 2500;
+    const { rowCount } = await inquirer.prompt([
+      {
+        name: "rowCount",
+        message: "How many rows to generate?",
+        type: "input",
+      },
+    ]);
+
+    // Ask which types of data to generate for each column.
+    const { fields } = fetchDBResponseJson.tableInfo;
+    for (let i = 0; i < fields.length; i++) {
+      if (fields[i].name === "id") continue;
+
+      // TODO: This isn't exhaustive.
+      const { generatedType } = await inquirer.prompt([
+        {
+          name: "generatedType",
+          message: `What type of data to generate for ${fields[i].name}?`,
+          type: "list",
+          choices: ["Name", "Address", "Phone Number", "Email"],
+        },
+      ]);
+      fields[i].generatedType = coerceToGeneratedColumnType(generatedType);
+    }
+
+    // Generate mock data.
+    const generatedData = generateData(fields, rowCount);
+    const payload: BulkInsertIntoTablePayload = {
+      kind: "BulkInsertIntoTable",
+      tableName: argv.gendata,
+      additions: generatedData,
+    };
+
+    // Insert to Retool DB.
+    const bulkInsertResponse = await fetch(
+      `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
+      {
+        headers: httpHeaders,
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    );
+    const bulkInsertResponseJson = await bulkInsertResponse.json();
+    if (bulkInsertResponseJson.success) {
+      console.log("Successfully inserted data.");
+    } else {
+      console.log("Error fetching Retool DB");
+      console.log(fetchDBResponseJson);
+      return;
+    }
   }
 };
+
+// TODO: Generalize this. Figure out the id problem.
+function generateData(
+  fields: any,
+  rowCount: number
+): {
+  data: string[][];
+  fields: string[];
+} {
+  const data = [
+    ["4", "asd"],
+    ["5", "asd"],
+  ];
+
+  return {
+    data,
+    fields: ["id", "col_1"],
+  };
+}
+
+// Fetches all existing tables from a Retool DB.
+// TODO: Type tables.
+async function fetchAllTables(
+  credentials: Credentials
+): Promise<any | undefined> {
+  const spinner = ora("Fetching Retool DBs").start();
+  const httpHeaders = {
+    accept: "application/json",
+    "content-type": "application/json",
+    "x-xsrf-token": credentials.xsrf,
+    cookie: `accessToken=${credentials.accessToken};`,
+  };
+
+  const fetchDBsResponse = await fetch(
+    `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`,
+    {
+      headers: httpHeaders,
+      method: "GET",
+    }
+  );
+
+  spinner.stop();
+  const fetchDBsResponseJson = await fetchDBsResponse.json();
+  if (fetchDBsResponseJson.success) {
+    const { tables } = fetchDBsResponseJson.gridInfo;
+    return tables;
+  }
+}
 
 export async function createTable(
   tableName: string,
@@ -210,6 +349,21 @@ export async function createTable(
       "Failed to create a RetoolDB, error: ",
       createTableResponseJson.error
     );
+  }
+}
+
+function coerceToGeneratedColumnType(input: string): GeneratedColumnType {
+  switch (input) {
+    case "Name":
+      return "name";
+    case "Address":
+      return "address";
+    case "Phone Number":
+      return "phoneNumber";
+    case "Email":
+      return "emailAddress";
+    default:
+      return "name";
   }
 }
 
