@@ -21,7 +21,14 @@ export type FieldMapping = Array<{
   dbType?: string;
 }>;
 
-type GeneratedColumnType = "name" | "address" | "phone" | "email";
+type GeneratedColumnType =
+  | "name"
+  | "address"
+  | "phone"
+  | "email"
+  | "date"
+  | "lorem"
+  | "randomNumber";
 
 type BulkInsertIntoTablePayload = {
   kind: "BulkInsertIntoTable";
@@ -210,13 +217,20 @@ const handler = async function (argv: any) {
       if (fields[i].name === fetchDBInfoJson.tableInfo.primaryKeyColumn)
         continue;
 
-      // TODO: This isn't exhaustive.
       const { generatedType } = await inquirer.prompt([
         {
           name: "generatedType",
           message: `What type of data to generate for ${fields[i].name}?`,
           type: "list",
-          choices: ["Name", "Address", "Phone Number", "Email"],
+          choices: [
+            "Name",
+            "Address",
+            "Phone Number",
+            "Email",
+            "Date",
+            "Lorem Ipsum",
+            "Random Number",
+          ],
         },
       ]);
       fields[i].generatedType = coerceToGeneratedColumnType(generatedType);
@@ -331,6 +345,12 @@ function generateDataForColumn(field: any): string {
       return faker.phone.number();
     case "email":
       return faker.internet.email();
+    case "date":
+      return faker.date.recent();
+    case "lorem":
+      return faker.lorem.sentence(5);
+    case "randomNumber":
+      return faker.number.int(1000);
     default:
       return "";
   }
@@ -437,6 +457,12 @@ function coerceToGeneratedColumnType(input: string): GeneratedColumnType {
       return "phone";
     case "Email":
       return "email";
+    case "Date":
+      return "date";
+    case "Lorem Ipsum":
+      return "lorem";
+    case "Random Number":
+      return "randomNumber";
     default:
       return "name";
   }
