@@ -1,6 +1,6 @@
 {
   "name": "retool-cli",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "CLI for Retool",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -24,6 +24,7 @@
   "homepage": "https://github.com/tryretool/retool-cli#readme",
   "dependencies": {
     "@faker-js/faker": "^8.0.2",
+    "axios": "^1.4.0",
     "connection-string-parser": "^1.0.4",
     "cookie-parser": "^1.4.6",
     "csv-parser": "^3.0.0",
