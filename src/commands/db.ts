@@ -1,3 +1,4 @@
+const { faker } = require("@faker-js/faker");
 const fetch = require("node-fetch");
 const fs = require("fs");
 const inquirer = require("inquirer");
@@ -20,14 +21,7 @@ export type FieldMapping = Array<{
   dbType?: string;
 }>;
 
-type GeneratedColumnType =
-  | "name"
-  | "address"
-  | "phoneNumber"
-  | "emailAddress"
-  | "date"
-  | "uuid"
-  | "lorem-ipsum";
+type GeneratedColumnType = "name" | "address" | "phone" | "email";
 
 type BulkInsertIntoTablePayload = {
   kind: "BulkInsertIntoTable";
@@ -164,25 +158,37 @@ const handler = async function (argv: any) {
       return;
     }
 
-    //Fetch the db schema.
+    //Fetch db schema and data.
     const httpHeaders = {
       accept: "application/json",
       "content-type": "application/json",
       "x-xsrf-token": credentials.xsrf,
       cookie: `accessToken=${credentials.accessToken};`,
     };
-    const fetchDBResponse = await fetch(
+
+    // TODO parallelize this.
+    const fetchDBInfo = await fetch(
       `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${argv.gendata}/info`,
       {
         headers: httpHeaders,
         method: "GET",
       }
     );
+    const fetchDBData = await fetch(
+      `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${argv.gendata}/data`,
+      {
+        headers: httpHeaders,
+        body: JSON.stringify({ filters: [], sorting: [] }),
+        method: "POST",
+      }
+    );
+
     spinner.stop();
-    const fetchDBResponseJson = await fetchDBResponse.json();
-    if (!fetchDBResponseJson.success) {
+    const fetchDBInfoJson = await fetchDBInfo.json();
+    const fetchDBDataText = await fetchDBData.text();
+    if (!fetchDBInfoJson.success || fetchDBDataText?.length === 0) {
       console.log("Error fetching Retool DB");
-      console.log(fetchDBResponseJson);
+      console.log(fetchDBInfoJson);
       return;
     }
 
@@ -198,9 +204,11 @@ const handler = async function (argv: any) {
     ]);
 
     // Ask which types of data to generate for each column.
-    const { fields } = fetchDBResponseJson.tableInfo;
+    const { fields } = fetchDBInfoJson.tableInfo;
+
     for (let i = 0; i < fields.length; i++) {
-      if (fields[i].name === "id") continue;
+      if (fields[i].name === fetchDBInfoJson.tableInfo.primaryKeyColumn)
+        continue;
 
       // TODO: This isn't exhaustive.
       const { generatedType } = await inquirer.prompt([
@@ -214,8 +222,28 @@ const handler = async function (argv: any) {
       fields[i].generatedType = coerceToGeneratedColumnType(generatedType);
     }
 
+    // Find the max primary key value.
+    // 1. Parse the table data.
+    const parsedDBData = parseDBData(fetchDBDataText);
+    // 2. Find the index of the primary key column.
+    const primaryKeyColIndex = parsedDBData[0].indexOf(
+      fetchDBInfoJson.tableInfo.primaryKeyColumn
+    );
+    // 3. Find the max value of the primary key column.
+    const primaryKeyMaxVal = Math.max(
+      ...parsedDBData
+        .slice(1)
+        .map((row) => row[primaryKeyColIndex])
+        .map((id) => parseInt(id))
+    );
+
     // Generate mock data.
-    const generatedData = generateData(fields, rowCount);
+    const generatedData = generateData(
+      fields,
+      rowCount,
+      fetchDBInfoJson.tableInfo.primaryKeyColumn,
+      primaryKeyMaxVal
+    );
     const payload: BulkInsertIntoTablePayload = {
       kind: "BulkInsertIntoTable",
       tableName: argv.gendata,
@@ -236,29 +264,76 @@ const handler = async function (argv: any) {
       console.log("Successfully inserted data.");
     } else {
       console.log("Error fetching Retool DB");
-      console.log(fetchDBResponseJson);
+      console.log(bulkInsertResponseJson);
       return;
     }
   }
 };
 
-// TODO: Generalize this. Figure out the id problem.
+// data param is in format:
+// ["col_1","col_2","col_3"]
+// ["val_1","val_2","val_3"]
+// transform to:
+// [["col_1","col_2","col_3"],["val_1","val_2","val_3"]]
+function parseDBData(data: string): string[][] {
+  let rows = data.trim().split("\n");
+  // Remove all quotes and [] brackets.
+  rows = rows.map((row: string) =>
+    row.replace(/"/g, "").replace(/\[/g, "").replace(/\]/g, "")
+  );
+  const parsedRows: string[][] = [];
+  for (let i = 0; i < rows.length; i++) {
+    parsedRows.push(rows[i].split(","));
+  }
+  return parsedRows;
+}
+
 function generateData(
   fields: any,
-  rowCount: number
+  rowCount: number,
+  primaryKeyColumnName: string,
+  primaryKeyMaxVal: number
 ): {
   data: string[][];
   fields: string[];
 } {
-  const data = [
-    ["4", "asd"],
-    ["5", "asd"],
-  ];
+  const column_names = fields.map((field: any) => field.name);
+  const rows: string[][] = [];
+  // Init rows
+  for (let j = 0; j < rowCount; j++) {
+    rows.push([]);
+  }
+
+  for (let i = 0; i < fields.length; i++) {
+    for (let j = 0; j < rowCount; j++) {
+      // Handle primary key column.
+      if (fields[i].name === primaryKeyColumnName) {
+        rows[j].push((primaryKeyMaxVal + j + 1).toString());
+      } else {
+        rows[j].push(generateDataForColumn(fields[i]));
+      }
+    }
+  }
 
   return {
-    data,
-    fields: ["id", "col_1"],
+    data: rows,
+    fields: column_names,
   };
+}
+
+function generateDataForColumn(field: any): string {
+  switch (field.generatedType) {
+    case "name":
+      return faker.person.fullName();
+    case "address":
+      return faker.location.streetAddress();
+    case "phone":
+      return faker.phone.number();
+    case "email":
+      return faker.internet.email();
+    default:
+      return "";
+  }
 }
 
 // Fetches all existing tables from a Retool DB.
@@ -359,9 +434,9 @@ function coerceToGeneratedColumnType(input: string): GeneratedColumnType {
     case "Address":
       return "address";
     case "Phone Number":
-      return "phoneNumber";
+      return "phone";
     case "Email":
-      return "emailAddress";
+      return "email";
     default:
       return "name";
   }
