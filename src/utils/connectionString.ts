@@ -1,7 +1,8 @@
-const fetch = require("node-fetch");
+const axios = require("axios");
 
 import { ConnectionStringParser } from "connection-string-parser";
 import { getCredentials } from "./credentials";
+import { getRequest } from "./networking";
 
 // Print a psql command to connect to the Retool DB.
 // Connnection string is never persisted, it's fetched when needed.
@@ -29,22 +30,11 @@ async function getConnectionString(): Promise<string | undefined> {
   ) {
     return;
   }
-
-  const httpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-    "x-xsrf-token": credentials.xsrf,
-    cookie: `accessToken=${credentials.accessToken};`,
-  };
-  const grid = await fetch(
+  axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
+  axios.defaults.headers.cookie = `accessToken=${credentials.accessToken};`;
+  const grid = await getRequest(
     `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`,
-    {
-      headers: httpHeaders,
-      method: "GET",
-    }
+    false
   );
-  const gridJson = await grid.json();
-  if (gridJson.success && gridJson.gridInfo.connectionString) {
-    return gridJson.gridInfo.connectionString;
-  }
+  return grid.data?.gridInfo?.connectionString;
 }
