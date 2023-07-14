@@ -1,11 +1,12 @@
-const fetch = require("node-fetch");
+const axios = require("axios");
 const inquirer = require("inquirer");
 const ora = require("ora");
 
 import { CommandModule } from "yargs";
-import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
+import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
 import { persistCredentials, doCredentialsExist } from "../utils/credentials";
 import { isEmailValid } from "../utils/emailValidation";
+import { retoolPost, retoolGet } from "../utils/networking";
 
 const command = "signup";
 const describe = "Create a Retool account.";
@@ -38,64 +39,45 @@ const handler = async function (argv: any) {
 
   // Step 2: Call signup endpoint, get cookies.
   const spinner = ora("Verifying email/password validity on server").start();
-  const body = JSON.stringify({
-    email,
-    password,
-    planKey: "free",
-  });
-  const httpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-  };
-  const signupResponse = await fetch(`https://login.retool.com/api/signup`, {
-    headers: httpHeaders,
-    body,
-    method: "POST",
-  });
+  const signupResponse = await retoolPost(
+    `https://login.retool.com/api/signup`,
+    {
+      email,
+      password,
+      planKey: "free",
+    }
+  );
   spinner.stop();
-  if (signupResponse.status !== 200) {
-    await logHttpError(signupResponse);
-    return;
-  }
-  const accessToken = accessTokenFromCookie(
-    signupResponse.headers.get("Set-Cookie")
+
+  const accessToken = accessTokenFromCookies(
+    signupResponse.headers["set-cookie"]
   );
-  const xsrfToken = xsrfTokenFromCookie(
-    signupResponse.headers.get("Set-Cookie")
-  );
+  const xsrfToken = xsrfTokenFromCookies(signupResponse.headers["set-cookie"]);
   if (!accessToken || !xsrfToken) {
-    await logHttpError(signupResponse);
+    console.log(
+      "Error creating account, response did not include access tokens, please try again."
+    );
     return;
   }
 
-  const authedHttpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-    "x-xsrf-token": xsrfToken,
-    cookie: `accessToken=${accessToken};`,
-  };
+  axios.defaults.headers["x-xsrf-token"] = xsrfToken;
+  axios.defaults.headers.cookie = `accessToken=${accessToken};`;
 
   // Step 3: Collect a valid name/org.
   while (!name) {
-    name = await collectName(authedHttpHeaders);
+    name = await collectName();
   }
   while (!org) {
-    org = await collectOrg(authedHttpHeaders);
+    org = await collectOrg();
   }
 
   // Step 4: Initialize organization.
-  const initializeOrganizationResponse = await fetch(
+  await retoolPost(
     `https://login.retool.com/api/organization/admin/initializeOrganization`,
     {
-      headers: authedHttpHeaders,
-      body: JSON.stringify({ subdomain: org }),
-      method: "POST",
+      subdomain: org,
     }
   );
-  if (initializeOrganizationResponse.status !== 200) {
-    await logHttpError(initializeOrganizationResponse);
-    return;
-  }
 
   // Step 5: Persist credentials
   console.log("Account created successfully!");
@@ -147,9 +129,7 @@ async function colllectPassword(): Promise<string | undefined> {
   return password;
 }
 
-async function collectName(
-  authedHttpHeaders: any
-): Promise<string | undefined> {
+async function collectName(): Promise<string | undefined> {
   const { name } = await inquirer.prompt([
     {
       name: "name",
@@ -162,28 +142,22 @@ async function collectName(
     return;
   }
   const parts = name.split(" ");
-  const body = JSON.stringify({
-    firstName: parts[0],
-    lastName: parts[1],
-  });
-
-  const changeNameResponse = await fetch(
+  const changeNameResponse = await retoolPost(
     `https://login.retool.com/api/user/changeName`,
     {
-      headers: authedHttpHeaders,
-      body,
-      method: "POST",
-    }
+      firstName: parts[0],
+      lastName: parts[1],
+    },
+    false
   );
-  if (changeNameResponse.status !== 200) {
-    await logHttpError(changeNameResponse);
+  if (!changeNameResponse) {
     return;
   }
 
   return name;
 }
 
-async function collectOrg(authedHttpHeaders: any): Promise<string | undefined> {
+async function collectOrg(): Promise<string | undefined> {
   let { org } = await inquirer.prompt([
     {
       name: "org",
@@ -198,26 +172,16 @@ async function collectOrg(authedHttpHeaders: any): Promise<string | undefined> {
     org = "z" + (Math.random() + 1).toString(36).substring(2);
   }
 
-  const checkSubdomainAvailabilityResponse = await fetch(
+  const checkSubdomainAvailabilityResponse = await retoolGet(
     `https://login.retool.com/api/organization/admin/checkSubdomainAvailability?subdomain=${org}`,
-    {
-      headers: authedHttpHeaders,
-      method: "GET",
-    }
+    false
   );
 
-  if (checkSubdomainAvailabilityResponse.status !== 200) {
-    await logHttpError(checkSubdomainAvailabilityResponse);
+  if (!checkSubdomainAvailabilityResponse.status) {
     return;
   }
 
   return org;
-}
-
-async function logHttpError(httpRes: any) {
-  const error = await httpRes.json();
-  console.log("Please try again.");
-  console.log(error);
 }
 
 const commandModule: CommandModule = { command, describe, builder, handler };
