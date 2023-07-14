@@ -1,5 +1,5 @@
+const axios = require("axios");
 const { faker } = require("@faker-js/faker");
-const fetch = require("node-fetch");
 const fs = require("fs");
 const inquirer = require("inquirer");
 const path = require("path");
@@ -12,6 +12,7 @@ import {
   Credentials,
 } from "../utils/credentials";
 import { logConnectionStringDetails } from "../utils/connectionString";
+import { getRequest, postRequest } from "../utils/networking";
 import { CommandModule } from "yargs";
 
 export type FieldMapping = Array<{
@@ -30,24 +31,10 @@ type GeneratedColumnType =
   | "lorem"
   | "randomNumber";
 
-type BulkInsertIntoTablePayload = {
-  kind: "BulkInsertIntoTable";
-  tableName: string;
-  additions: {
-    data: string[][];
-    fields: string[];
-  };
+type DBInfoPayload = {
+  success: true;
+  tableInfo: RetoolDBTableInfo;
 };
-
-type DBInfoPayload =
-  | {
-      error: true;
-      message: string;
-    }
-  | {
-      success: true;
-      tableInfo: RetoolDBTableInfo;
-    };
 
 // This type is returned from Retool table/info API endpoint.
 type RetoolDBTableInfo = {
@@ -109,6 +96,8 @@ const handler = async function (argv: any) {
     spinner.stop();
     return;
   }
+  axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
+  axios.defaults.headers.cookie = `accessToken=${credentials.accessToken};`;
   if (!credentials.gridId || !credentials.retoolDBUuid) {
     await fetchDBCredentials();
     credentials = getCredentials();
@@ -202,42 +191,23 @@ const handler = async function (argv: any) {
 
     const spinner = ora(`Fetching ${argv.gendata} metadata`).start();
 
-    //Fetch db schema and data.
-    const httpHeaders = {
-      accept: "application/json",
-      "content-type": "application/json",
-      "x-xsrf-token": credentials.xsrf,
-      cookie: `accessToken=${credentials.accessToken};`,
-    };
-
-    // TODO parallelize this.
-    const fetchDBInfo = await fetch(
-      `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${argv.gendata}/info`,
-      {
-        headers: httpHeaders,
-        method: "GET",
-      }
+    // Fetch Retool DB schema and data.
+    const infoReq = getRequest(
+      `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${argv.gendata}/info`
     );
-    const fetchDBData = await fetch(
+    const dataReq = postRequest(
       `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${argv.gendata}/data`,
       {
-        headers: httpHeaders,
-        body: JSON.stringify({ filters: [], sorting: [] }),
-        method: "POST",
+        filters: [],
+        sorting: [],
       }
     );
-
+    const [infoRes, dataRes] = await Promise.all([infoReq, dataReq]);
     spinner.stop();
-    const fetchDBInfoJson: DBInfoPayload = await fetchDBInfo.json();
-    const fetchDBDataText: string = await fetchDBData.text();
-    if ("error" in fetchDBInfoJson) {
-      console.log("Error fetching Retool DB:");
-      console.log(fetchDBInfoJson);
-      return;
-    }
+    const retoolDBInfo: DBInfoPayload = infoRes.data;
+    const retoolDBData: string = dataRes.data;
 
     // Ask how many rows to generate.
-    // TODO: Enforce this.
     const MAX_BATCH_SIZE = 2500;
     const { rowCount } = await inquirer.prompt([
       {
@@ -246,13 +216,18 @@ const handler = async function (argv: any) {
         type: "input",
       },
     ]);
+    if (rowCount > MAX_BATCH_SIZE) {
+      console.log(
+        `Error: Cannot generate more than ${MAX_BATCH_SIZE} rows at a time.`
+      );
+      return;
+    }
 
     // Ask which types of data to generate for each column.
-    const { fields } = fetchDBInfoJson.tableInfo;
+    const { fields } = retoolDBInfo.tableInfo;
 
     for (let i = 0; i < fields.length; i++) {
-      if (fields[i].name === fetchDBInfoJson.tableInfo.primaryKeyColumn)
-        continue;
+      if (fields[i].name === retoolDBInfo.tableInfo.primaryKeyColumn) continue;
 
       const { generatedType } = await inquirer.prompt([
         {
@@ -276,10 +251,10 @@ const handler = async function (argv: any) {
 
     // Find the max primary key value.
     // 1. Parse the table data.
-    const parsedDBData = parseDBData(fetchDBDataText);
+    const parsedDBData = parseDBData(retoolDBData);
     // 2. Find the index of the primary key column.
     const primaryKeyColIndex = parsedDBData[0].indexOf(
-      fetchDBInfoJson.tableInfo.primaryKeyColumn
+      retoolDBInfo.tableInfo.primaryKeyColumn
     );
     // 3. Find the max value of the primary key column.
     const primaryKeyMaxVal = Math.max(
@@ -294,32 +269,20 @@ const handler = async function (argv: any) {
     const generatedData = generateData(
       fields,
       rowCount,
-      fetchDBInfoJson.tableInfo.primaryKeyColumn,
+      retoolDBInfo.tableInfo.primaryKeyColumn,
       primaryKeyMaxVal
     );
-    const payload: BulkInsertIntoTablePayload = {
-      kind: "BulkInsertIntoTable",
-      tableName: argv.gendata,
-      additions: generatedData,
-    };
 
     // Insert to Retool DB.
-    const bulkInsertResponse = await fetch(
+    await postRequest(
       `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
       {
-        headers: httpHeaders,
-        method: "POST",
-        body: JSON.stringify(payload),
+        kind: "BulkInsertIntoTable",
+        tableName: argv.gendata,
+        additions: generatedData,
       }
     );
-    const bulkInsertResponseJson = await bulkInsertResponse.json();
-    if (bulkInsertResponseJson.success) {
-      console.log("Successfully inserted data.");
-    } else {
-      console.log("Error inserting to Retool DB");
-      console.log(bulkInsertResponseJson);
-      return;
-    }
+    console.log("Successfully inserted data.");
   }
 };
 
@@ -407,25 +370,13 @@ async function fetchAllTables(
   credentials: Credentials
 ): Promise<any | undefined> {
   const spinner = ora("Fetching Retool DBs").start();
-  const httpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-    "x-xsrf-token": credentials.xsrf,
-    cookie: `accessToken=${credentials.accessToken};`,
-  };
-
-  const fetchDBsResponse = await fetch(
-    `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`,
-    {
-      headers: httpHeaders,
-      method: "GET",
-    }
+  const fetchDBsResponse = await getRequest(
+    `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`
   );
-
   spinner.stop();
-  const fetchDBsResponseJson = await fetchDBsResponse.json();
-  if (fetchDBsResponseJson.success) {
-    const { tables } = fetchDBsResponseJson.gridInfo;
+
+  if (fetchDBsResponse.data) {
+    const { tables } = fetchDBsResponse.data.gridInfo;
     return tables;
   }
 }
@@ -459,37 +410,20 @@ export async function createTable(
     },
   };
 
-  const httpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-    "x-xsrf-token": credentials.xsrf,
-    cookie: `accessToken=${credentials.accessToken};`,
-  };
-
-  const createTableResponse = await fetch(
+  await postRequest(
     `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
     {
-      headers: httpHeaders,
-      body: JSON.stringify(payload),
-      method: "POST",
+      ...payload,
     }
   );
 
   spinner.stop();
-  const createTableResponseJson = await createTableResponse.json();
-  if (createTableResponseJson.success) {
-    console.log("Successfully created a RetoolDB!");
-    console.log(
-      `View in browswer: https://${credentials.domain}/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
-    );
-    if (credentials.hasConnectionString && printConnectionString) {
-      await logConnectionStringDetails();
-    }
-  } else {
-    console.error(
-      "Failed to create a RetoolDB, error: ",
-      createTableResponseJson.error
-    );
+  console.log("Successfully created a RetoolDB!");
+  console.log(
+    `View in browswer: https://${credentials.domain}/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
+  );
+  if (credentials.hasConnectionString && printConnectionString) {
+    await logConnectionStringDetails();
   }
 }
 

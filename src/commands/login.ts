@@ -1,4 +1,3 @@
-const axios = require("axios");
 const open = require("open");
 const path = require("path");
 const cookieParser = require("cookie-parser");
