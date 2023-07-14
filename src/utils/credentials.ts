@@ -1,6 +1,7 @@
-const fetch = require("node-fetch");
 const fs = require("fs");
 const inquirer = require("inquirer");
+
+import { getRequest } from "./networking";
 
 export const CREDENTIALS_PATH = __dirname + "/.retool-cli-credentials";
 
@@ -92,51 +93,25 @@ export async function fetchDBCredentials() {
     return;
   }
 
-  const httpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-    "x-xsrf-token": credentials.xsrf,
-    cookie: `accessToken=${credentials.accessToken};`,
-  };
+  // 1. Fetch all resources
+  const resources = await getRequest(
+    `https://${credentials.domain}/api/resources`
+  );
 
-  try {
-    // 1. Fetch all resources
-    const resources = await fetch(
-      `https://${credentials.domain}/api/resources`,
-      {
-        headers: httpHeaders,
-        method: "GET",
-      }
-    );
+  // 2. Filter down to Retool DB UUID
+  const retoolDBs = resources.data.resources.filter(
+    (resource: any) => resource.displayName === "retool_db"
+  );
+  const retoolDBUuid = retoolDBs[0].name;
 
-    // 2. Filter down to Retool DB UUID
-    const allResources = await resources.json();
-    if (allResources.success === false) {
-      console.log(allResources);
-      return;
-    }
-    const retoolDBs = allResources.resources.filter(
-      (resource: any) => resource.displayName === "retool_db"
-    );
-    const retoolDBUuid = retoolDBs[0].name;
-
-    // 3. Fetch Grid Info
-    const grid = await fetch(
-      `https://${credentials.domain}/api/grid/retooldb/${retoolDBUuid}?env=production`,
-      {
-        headers: httpHeaders,
-        method: "GET",
-      }
-    );
-    const gridJson = await grid.json();
-    persistCredentials({
-      ...credentials,
-      retoolDBUuid,
-      gridId: gridJson.gridInfo.id,
-      hasConnectionString: gridJson.gridInfo?.connectionString?.length > 0,
-    });
-  } catch (err: any) {
-    console.error("Error fetching RetoolDB credentials: ", err);
-    return;
-  }
+  // 3. Fetch Grid Info
+  const grid = await getRequest(
+    `https://${credentials.domain}/api/grid/retooldb/${retoolDBUuid}?env=production`
+  );
+  persistCredentials({
+    ...credentials,
+    retoolDBUuid,
+    gridId: grid.data.gridInfo.id,
+    hasConnectionString: grid.data.gridInfo?.connectionString?.length > 0,
+  });
 }

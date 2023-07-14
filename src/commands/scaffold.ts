@@ -1,3 +1,4 @@
+const axios = require("axios");
 const ora = require("ora");
 
 import { getCredentials, fetchDBCredentials } from "../utils/credentials";
@@ -30,6 +31,8 @@ const handler = async function (argv: any) {
     spinner.stop();
     return;
   }
+  axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
+  axios.defaults.headers.cookie = `accessToken=${credentials.accessToken};`;
   if (!credentials.gridId || !credentials.retoolDBUuid) {
     await fetchDBCredentials();
     credentials = getCredentials();

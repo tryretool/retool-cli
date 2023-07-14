@@ -1,8 +1,8 @@
-const fetch = require("node-fetch");
 const ora = require("ora");
 
 import { generateWorkflowMetadata } from "./puppeteer";
 import { getCredentials } from "./credentials";
+import { postRequest } from "./networking";
 
 // Generates a CRUD workflow from a template.
 export async function generateWorkflow(tableName: string) {
@@ -24,51 +24,36 @@ export async function generateWorkflow(tableName: string) {
     triggerWebhooks: workflowMeta.triggerWebhooks,
     blockData: workflowMeta.blockData,
   };
-  const httpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-    "x-xsrf-token": credentials.xsrf,
-    cookie: `accessToken=${credentials.accessToken};`,
-  };
 
   // Create workflow.
-  const workflow = await fetch(`https://${credentials.domain}/api/workflow`, {
-    headers: httpHeaders,
-    body: JSON.stringify(payload),
-    method: "POST",
-  });
-  const workflowRes = await workflow.json();
+  const workflow = await postRequest(
+    `https://${credentials.domain}/api/workflow`,
+    {
+      ...payload,
+    }
+  );
   spinner.stop();
-  if (workflowRes.id) {
+  if (workflow.data.id) {
     console.log("Workflow created successfully!");
     console.log(
-      `View it: https://${credentials.domain}/workflows/${workflowRes.id}`
+      `View it: https://${credentials.domain}/workflows/${workflow.data.id}`
     );
   } else {
     console.log("Error creating workflow: ");
-    console.log(workflowRes);
+    console.log(workflow);
     return;
   }
 
   // Enable workflow.
   spinner = ora("Deploying workflow").start();
-  const enable = await fetch(
-    `https://${credentials.domain}/api/workflow/${workflowRes.id}`,
+  await postRequest(
+    `https://${credentials.domain}/api/workflow/${workflow.data.id}`,
     {
-      headers: httpHeaders,
-      body: JSON.stringify({ isEnabled: true }),
-      method: "POST",
+      isEnabled: true,
     }
   );
-  const enableRes = await enable.json();
   spinner.stop();
-  if (enableRes.isEnabled) {
-    console.log("Workflow successfully deployed!");
-    const curlCommand = `curl -X POST --url "http://${credentials.domain}/retool/v1/workflows/${workflowRes.id}/startTrigger?workflowApiKey=${workflowRes.apiKey}" --data '{"type":"read"}' -H 'Content-Type: application/json'`;
-    console.log("cURL it: ", curlCommand);
-  } else {
-    console.log("Error deploying workflow: ");
-    console.log(enableRes);
-    return;
-  }
+  console.log("Workflow successfully deployed!");
+  const curlCommand = `curl -X POST --url "http://${credentials.domain}/retool/v1/workflows/${workflow.data.id}/startTrigger?workflowApiKey=${workflow.data.apiKey}" --data '{"type":"read"}' -H 'Content-Type: application/json'`;
+  console.log("cURL it: ", curlCommand);
 }
