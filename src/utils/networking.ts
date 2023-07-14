@@ -1,26 +1,41 @@
 const axios = require("axios");
 
-export async function retoolPost(url: string, body: any, exitOnFailure = true) {
+// Convenience function for making network requests. Error handling is centralized here.
+// If nothing is returned, the request failed and the process may exit.
+export async function postRequest(
+  url: string,
+  body: any,
+  exitOnFailure = true,
+  headers = {}
+) {
   try {
-    const response = await axios.post(url, {
-      ...body,
-    });
+    const response = await axios.post(
+      url,
+      {
+        ...body,
+      },
+      {
+        headers: {
+          ...headers,
+        },
+      }
+    );
     return response;
   } catch (error: any) {
-    handleError(error, exitOnFailure);
+    handleError(error, exitOnFailure, url);
   }
 }
 
-export async function retoolGet(url: string, exitOnFailure = true) {
+export async function getRequest(url: string, exitOnFailure = true) {
   try {
     const response = await axios.get(url);
     return response;
   } catch (error: any) {
-    handleError(error, exitOnFailure);
+    handleError(error, exitOnFailure, url);
   }
 }
 
-function handleError(error: any, exitOnFailure = true) {
+function handleError(error: any, exitOnFailure = true, url: string) {
   if (error.response) {
     // The request was made, but the server responded with a status code outside the 2xx range
     console.error("\nResponse Error:", error.response.data);
@@ -34,6 +49,8 @@ function handleError(error: any, exitOnFailure = true) {
     console.error("\nError:", error.message);
   }
   if (exitOnFailure) {
+    console.trace();
+    console.error(`\nFailed to make request to ${url}. Exiting.`);
     process.exit(1);
   }
 }

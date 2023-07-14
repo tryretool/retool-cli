@@ -1,4 +1,4 @@
-const fetch = require("node-fetch");
+const axios = require("axios");
 const open = require("open");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -10,7 +10,8 @@ import {
   doCredentialsExist,
   askForCookies,
 } from "../utils/credentials";
-import { accessTokenFromCookie, xsrfTokenFromCookie } from "../utils/cookies";
+import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
+import { postRequest } from "../utils/networking";
 import { CommandModule } from "yargs";
 
 const command = "login";
@@ -80,42 +81,41 @@ async function loginViaEmail() {
     },
   ]);
 
-  const httpHeaders = {
-    accept: "application/json",
-    "content-type": "application/json",
-  };
-
   // Step 1: Hit /api/login with email and password.
-  const login = await fetch(`https://login.retool.com/api/login`, {
-    headers: httpHeaders,
-    body: JSON.stringify({ email, password }),
-    method: "POST",
+  const login = await postRequest(`https://login.retool.com/api/login`, {
+    email,
+    password,
   });
-  const loginJson = await login.json();
-  if (loginJson.error) {
-    console.log("Error logging in:");
-    console.log(loginJson);
-    return;
-  }
-  const { authUrl, authorizationToken } = loginJson;
+  const { authUrl, authorizationToken } = login.data;
   if (!authUrl || !authorizationToken) {
     console.log("Error logging in, please try again");
     return;
   }
 
   // Step 2: Hit /auth/saveAuth with authorizationToken.
-  const { redirectUrl, accessToken, xsrf } = await saveAuth(
-    authorizationToken,
+  const authResponse = await postRequest(
     authUrl,
-    { ...httpHeaders, origin: "https://login.retool.com" }
-  ).catch();
+    {
+      authorizationToken,
+    },
+    true,
+    {
+      origin: "https://login.retool.com",
+    }
+  );
+  const { redirectUri } = authResponse.data; // Tip: auth.data also contains a user object with lots of info.
+  const redirectUrl = redirectUri ? new URL(redirectUri) : undefined;
+  const accessToken = accessTokenFromCookies(
+    authResponse.headers["set-cookie"]
+  );
+  const xsrfToken = xsrfTokenFromCookies(authResponse.headers["set-cookie"]);
 
   // Step 3: Persist the credentials.
-  if (redirectUrl?.hostname && accessToken && xsrf) {
+  if (redirectUrl?.hostname && accessToken && xsrfToken) {
     persistCredentials({
       domain: redirectUrl.hostname,
       accessToken,
-      xsrf,
+      xsrf: xsrfToken,
     });
     console.log("Credentials saved/updated successfully!");
   } else {
@@ -197,34 +197,6 @@ async function loginViaBrowser() {
   }
 
   server.close();
-}
-
-async function saveAuth(
-  authorizationToken: string,
-  authUrl: string,
-  httpHeaders: any
-): Promise<{
-  redirectUrl: URL | undefined;
-  accessToken: string | undefined;
-  xsrf: string | undefined;
-}> {
-  const auth = await fetch(authUrl, {
-    headers: httpHeaders,
-    body: JSON.stringify({ authorizationToken }),
-    method: "POST",
-  });
-  const authJson = await auth.json();
-  if (authJson.error) {
-    console.log("Error logging in:");
-    console.log(authJson);
-    throw new Error();
-  }
-
-  const { redirectUri } = authJson; // Tip: authJson also contains a user object with lots of info.
-  const redirectUrl = redirectUri ? new URL(redirectUri) : undefined;
-  const accessToken = accessTokenFromCookie(auth.headers.get("Set-Cookie"));
-  const xsrf = xsrfTokenFromCookie(auth.headers.get("Set-Cookie"));
-  return { redirectUrl, accessToken, xsrf };
 }
 
 const commandModule: CommandModule = {

@@ -6,7 +6,7 @@ import { CommandModule } from "yargs";
 import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
 import { persistCredentials, doCredentialsExist } from "../utils/credentials";
 import { isEmailValid } from "../utils/emailValidation";
-import { retoolPost, retoolGet } from "../utils/networking";
+import { postRequest, getRequest } from "../utils/networking";
 
 const command = "signup";
 const describe = "Create a Retool account.";
@@ -39,7 +39,7 @@ const handler = async function (argv: any) {
 
   // Step 2: Call signup endpoint, get cookies.
   const spinner = ora("Verifying email/password validity on server").start();
-  const signupResponse = await retoolPost(
+  const signupResponse = await postRequest(
     `https://login.retool.com/api/signup`,
     {
       email,
@@ -72,7 +72,7 @@ const handler = async function (argv: any) {
   }
 
   // Step 4: Initialize organization.
-  await retoolPost(
+  await postRequest(
     `https://login.retool.com/api/organization/admin/initializeOrganization`,
     {
       subdomain: org,
@@ -142,7 +142,7 @@ async function collectName(): Promise<string | undefined> {
     return;
   }
   const parts = name.split(" ");
-  const changeNameResponse = await retoolPost(
+  const changeNameResponse = await postRequest(
     `https://login.retool.com/api/user/changeName`,
     {
       firstName: parts[0],
@@ -172,7 +172,7 @@ async function collectOrg(): Promise<string | undefined> {
     org = "z" + (Math.random() + 1).toString(36).substring(2);
   }
 
-  const checkSubdomainAvailabilityResponse = await retoolGet(
+  const checkSubdomainAvailabilityResponse = await getRequest(
     `https://login.retool.com/api/organization/admin/checkSubdomainAvailability?subdomain=${org}`,
     false
   );
