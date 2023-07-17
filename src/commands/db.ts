@@ -46,6 +46,7 @@ type RetoolDBTableInfo = {
 // A "field" is a single Retool DB column.
 type RetoolDBField = {
   name: string;
+  type: any; //GridFieldType
   columnDefault:
     | {
         kind: "NoDefault";
@@ -83,6 +84,10 @@ const builder: CommandModule["builder"] = {
     retool db -g <db-name>`,
     type: "string",
     nargs: 1,
+  },
+  gpt: {
+    describe: `A modifier for the gendata command to use GPT to generate data. Usage:
+    retool db --gendata <db-name> --gpt`,
   },
   list: {
     alias: "l",
@@ -205,49 +210,8 @@ const handler = async function (argv: any) {
     const [infoRes, dataRes] = await Promise.all([infoReq, dataReq]);
     spinner.stop();
     const retoolDBInfo: DBInfoPayload = infoRes.data;
-    const retoolDBData: string = dataRes.data;
-
-    // Ask how many rows to generate.
-    const MAX_BATCH_SIZE = 2500;
-    const { rowCount } = await inquirer.prompt([
-      {
-        name: "rowCount",
-        message: "How many rows to generate?",
-        type: "input",
-      },
-    ]);
-    if (rowCount > MAX_BATCH_SIZE) {
-      console.log(
-        `Error: Cannot generate more than ${MAX_BATCH_SIZE} rows at a time.`
-      );
-      return;
-    }
-
-    // Ask which types of data to generate for each column.
     const { fields } = retoolDBInfo.tableInfo;
-
-    for (let i = 0; i < fields.length; i++) {
-      if (fields[i].name === retoolDBInfo.tableInfo.primaryKeyColumn) continue;
-
-      const { generatedType } = await inquirer.prompt([
-        {
-          name: "generatedType",
-          message: `What type of data to generate for ${fields[i].name}?`,
-          type: "list",
-          choices: [
-            "Name",
-            "Address",
-            "Phone Number",
-            "Email",
-            "Date",
-            "Lorem Ipsum",
-            "Random Number",
-          ],
-        },
-      ]);
-      fields[i].generatedColumnType =
-        coerceToGeneratedColumnType(generatedType);
-    }
+    const retoolDBData: string = dataRes.data;
 
     // Find the max primary key value.
     // 1. Parse the table data.
@@ -265,13 +229,106 @@ const handler = async function (argv: any) {
       0
     );
 
-    // Generate mock data.
-    const generatedData = generateData(
-      fields,
-      rowCount,
-      retoolDBInfo.tableInfo.primaryKeyColumn,
-      primaryKeyMaxVal
-    );
+    let generatedData: { fields: string[]; data: string[][] };
+
+    // Generate data using GPT.
+    if (argv.gpt) {
+      spinner.start("Generating data using GPT");
+      const genDataRes: {
+        data: {
+          data: string[][];
+        };
+      } = await postRequest(
+        `https://${credentials.domain}/api/grid/retooldb/generateData`,
+        {
+          fields: retoolDBInfo.tableInfo.fields.map((field) => {
+            return {
+              fieldName: field.name,
+              fieldType: field.type,
+              isPrimaryKey:
+                field.name === retoolDBInfo.tableInfo.primaryKeyColumn,
+            };
+          }),
+        }
+      );
+      spinner.stop();
+      const colNames = fields.map((field) => field.name);
+      const generatedRows: string[][] = [];
+      if (colNames.length !== genDataRes.data.data[0].length) {
+        console.log(
+          "Error: GPT did not generate the correct number of columns"
+        );
+        process.exit(1);
+      }
+
+      // GPT does not generate primary keys correctly.
+      // Generate them manually by adding the max primary key value to row #.
+      for (let i = 0; i < genDataRes.data.data.length; i++) {
+        const row = genDataRes.data.data[i];
+        for (let j = 0; j < row.length; j++) {
+          if (colNames[j] === retoolDBInfo.tableInfo.primaryKeyColumn) {
+            row[j] = (primaryKeyMaxVal + i + 1).toString();
+          }
+        }
+        generatedRows.push(row);
+      }
+      generatedData = {
+        fields: colNames,
+        data: generatedRows,
+      };
+    }
+    // Generate data using faker.
+    else {
+      // Ask how many rows to generate.
+      const MAX_BATCH_SIZE = 2500;
+      const { rowCount } = await inquirer.prompt([
+        {
+          name: "rowCount",
+          message: "How many rows to generate?",
+          type: "input",
+        },
+      ]);
+      if (rowCount > MAX_BATCH_SIZE) {
+        console.log(
+          `Error: Cannot generate more than ${MAX_BATCH_SIZE} rows at a time.`
+        );
+        return;
+      }
+
+      // Ask what type of data to generate for each column.
+      for (let i = 0; i < fields.length; i++) {
+        if (fields[i].name === retoolDBInfo.tableInfo.primaryKeyColumn)
+          continue;
+
+        const { generatedType } = await inquirer.prompt([
+          {
+            name: "generatedType",
+            message: `What type of data to generate for ${fields[i].name}?`,
+            type: "list",
+            choices: [
+              "Name",
+              "Address",
+              "Phone Number",
+              "Email",
+              "Date",
+              "Lorem Ipsum",
+              "Random Number",
+            ],
+          },
+        ]);
+        fields[i].generatedColumnType =
+          coerceToGeneratedColumnType(generatedType);
+      }
+
+      // Generate mock data.
+      generatedData = generateData(
+        fields,
+        rowCount,
+        retoolDBInfo.tableInfo.primaryKeyColumn,
+        primaryKeyMaxVal
+      );
+      console.log(generatedData);
+    }
 
     // Insert to Retool DB.
     await postRequest(
@@ -311,15 +368,15 @@ function parseDBData(data: string): string[][] {
 }
 
 function generateData(
-  fields: any,
+  fields: Array<RetoolDBField>,
   rowCount: number,
   primaryKeyColumnName: string,
   primaryKeyMaxVal: number
 ): {
-  data: string[][];
-  fields: string[];
+  data: string[][]; // rows
+  fields: string[]; // column names
 } {
-  const column_names = fields.map((field: any) => field.name);
+  const column_names = fields.map((field) => field.name);
   const rows: string[][] = [];
   // Init rows
   for (let j = 0; j < rowCount; j++) {
