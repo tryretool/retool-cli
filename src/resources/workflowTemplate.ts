@@ -5,7 +5,7 @@ export const workflowTemplate = [
       pluginId: "startTrigger",
       incomingOnSuccessPlugins: [],
       comment: {
-        body: 'This workflow supports peroforming CRUD operations on a Retool DB instance. To test it yourself, replace the query tables with your Retool DB name. Example valid JSON inputs:\n\n{\n type: "create",\n data:{ col1: "val1", col2: "val2"}\n}\n\n{\n type: "read"\n}\n\n{\n type: "update",\n row: id,\n data:{ col1: "val1", col2: "val2"}\n}\n\n{\n type: "destroy",\n row: id\n}',
+        body: 'This workflow supports performing CRUD operations on a Retool DB instance. Example valid JSON inputs:\n\n{\n type: "create",\n data:{ col1: "val1", col2: "val2"}\n}\n\n{\n type: "read"\n}\n\n{\n type: "update",\n row: id,\n data:{ col1: "val1", col2: "val2"}\n}\n\n{\n type: "destroy",\n row: id\n}',
         visible: true,
         pluginId: "startTrigger-comment",
       },

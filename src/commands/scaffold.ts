@@ -48,7 +48,11 @@ const handler = async function (argv: any) {
   console.log("\n");
   await generateWorkflow(argv.name);
   console.log("\n");
-  await generateApp(argv.name);
+  // await generateApp(argv.name);
+  console.log("To generate an app:");
+  console.log(`1: Go to https://${credentials.domain}`);
+  console.log(`2: Click "Create New" > "From Database"`);
+  console.log(`3: Resource is "retool_db", select table "${argv.name}"`);
 };
 
 const commandModule: CommandModule = {

@@ -54,6 +54,9 @@ export async function generateWorkflow(tableName: string) {
   );
   spinner.stop();
   console.log("Workflow successfully deployed!");
-  const curlCommand = `curl -X POST --url "http://${credentials.domain}/retool/v1/workflows/${workflow.data.id}/startTrigger?workflowApiKey=${workflow.data.apiKey}" --data '{"type":"read"}' -H 'Content-Type: application/json'`;
-  console.log("cURL it: ", curlCommand);
+  const domainParts = credentials.domain.split(".");
+  if (workflow.data.apiKey && domainParts.length === 3) {
+    const curlCommand = `curl -X POST --url "https://api.${domainParts[1]}.${domainParts[2]}/v1/workflows/${workflow.data.id}/startTrigger?workflowApiKey=${workflow.data.apiKey}" --data '{"type":"read"}' -H 'Content-Type: application/json'`;
+    console.log("Retool Cloud users can cURL it: ", curlCommand);
+  }
 }
