@@ -8,18 +8,18 @@ import { generateApp } from "../utils/apps";
 import { generateWorkflow } from "../utils/workflows";
 
 const command = "scaffold";
-const describe = "Scaffold a Retool DB, Workflow, and App.";
+const describe = "Scaffold a Retool DB, Workflow, or App.";
 const builder: CommandModule["builder"] = {
   name: {
     alias: "n",
-    describe: "Name of db to scaffold.",
+    describe: "Name of DB to scaffold.",
     type: "string",
     nargs: 1,
     demandOption: true,
   },
   columns: {
     alias: "c",
-    describe: "Column names in db to scaffold.",
+    describe: "Column names in DB to scaffold.",
     type: "array",
     demandOption: true,
   },

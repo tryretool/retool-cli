@@ -73,7 +73,7 @@ const builder: CommandModule["builder"] = {
   },
   new: {
     alias: "n",
-    describe: `Create a new Retool DB from csv file. Usage:
+    describe: `Create a new Retool DB from a CSV file. Usage:
     retool db -n <path-to-csv>`,
     type: "string",
     nargs: 1,
@@ -86,7 +86,7 @@ const builder: CommandModule["builder"] = {
     nargs: 1,
   },
   gpt: {
-    describe: `A modifier for the gendata command to use GPT to generate data. Usage:
+    describe: `A modifier for the gendata command that uses GPT to generate data. Usage:
     retool db --gendata <db-name> --gpt`,
   },
   list: {
@@ -115,13 +115,13 @@ const handler = async function (argv: any) {
 
   // Handle `retool db --new <path-to-csv>`
   if (argv.new) {
-    //Verify file exists, is a csv, and is < 15MB.
+    // Verify file exists, is a csv, and is < 15MB.
     if (
       !fs.existsSync(argv.new) ||
       !argv.new.endsWith(".csv") ||
       fs.statSync(argv.new).size > 15000000
     ) {
-      console.log("File does not exist or is not a csv or is > 15MB.");
+      console.log("The file does not exist, is not a CSV, or is > 15MB.");
       return;
     }
 
@@ -130,7 +130,7 @@ const handler = async function (argv: any) {
     const inputName = await inquirer.prompt([
       {
         name: "inputName",
-        message: "Table name? If blank, defaults to csv filename.",
+        message: "Table name? If blank, defaults to CSV filename.",
         type: "input",
       },
     ]);
