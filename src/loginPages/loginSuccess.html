@@ -1,11 +1,88 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <title>Sample Site</title>
+    <style>
+      @font-face {
+        font-family: "retool-font";
+        src: url(https://retool-edge-qa.com/src/styles/inter/Inter-roman.var.woff2)
+          format("truetype");
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: "retool-font", sans-serif;
+      }
+
+      .container {
+        display: flex;
+        height: 100%;
+        flex-direction: row;
+      }
+
+      .leftHalf {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 10%;
+      }
+
+      .rightHalf {
+        width: 50%;
+        background-color: rgb(246, 246, 246);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .rightHalfContent {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+    </style>
   </head>
   <body>
-    <h1>Login Success!</h1>
-    <h2>Go back to cli</h2>
+    <div class="container">
+      <div class="leftHalf">
+        <h1>Login Success 🤩</h1>
+        <h2>Go back to cli.</h2>
+      </div>
+      <div class="rightHalf">
+        <div class="rightHalfContent">
+          <img
+            src="https://retool-edge.com/74defa1cb7e44b8e4c6a9a4e16401768.svg"
+          />
+          <p>
+            Quickly
+            <b>build internal tools and dashboards</b>, using your team's own
+            <b>data and integrations</b>.
+          </p>
+          <p>Trusted by teams at</p>
+          <div>
+            <img
+              src="https://retool-edge.com/c8013049d9f5fd6534a32566330bc30b.svg"
+            /><img
+              src="https://retool-edge.com/b012e49425a171531584ffc6b83ddac7.svg"
+            /><img
+              src="https://retool-edge.com/712da9763ab57df772097e5bbfbb0e93.svg"
+            />
+          </div>
+          <div>
+            <img
+              src="https://retool-edge.com/a92ecd3e572f2e9f60fe730f12423bbf.svg"
+            /><img
+              src="https://retool-edge.com/2b4bac595b0ffc90b21875f4da016022.svg"
+            /><img
+              src="https://retool-edge.com/7d330bae6090805d468e2e8cd228802a.svg"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
