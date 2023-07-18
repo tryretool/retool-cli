@@ -38,7 +38,7 @@ const handler = async function (argv: any) {
   }
 
   // Step 2: Call signup endpoint, get cookies.
-  const spinner = ora("Verifying email/password validity on server").start();
+  const spinner = ora("Verifying that the email and password are valid on the server").start();
   const signupResponse = await postRequest(
     `https://login.retool.com/api/signup`,
     {
@@ -133,7 +133,7 @@ async function collectName(): Promise<string | undefined> {
   const { name } = await inquirer.prompt([
     {
       name: "name",
-      message: "What is your full name?",
+      message: "What is your first and last name?",
       type: "input",
     },
   ]);
@@ -162,7 +162,7 @@ async function collectOrg(): Promise<string | undefined> {
     {
       name: "org",
       message:
-        "What is your organization name? Leave blank to get a random name.",
+        "What is your organization name? Leave this blank to generate a random name.",
       type: "input",
     },
   ]);

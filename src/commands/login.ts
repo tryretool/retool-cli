@@ -40,11 +40,11 @@ const handler = async function (argv: any) {
       type: "list",
       choices: [
         {
-          name: "Log in with email/password",
+          name: "Log in with email and password",
           value: "email",
         },
         {
-          name: "Log in via Google SSO in a web browser",
+          name: "Log in using Google SSO in a web browser",
           value: "browser",
         },
         {
@@ -116,7 +116,7 @@ async function loginViaEmail() {
       accessToken,
       xsrf: xsrfToken,
     });
-    console.log("Credentials saved/updated successfully!");
+    console.log("Credentials saved and updated successfully!");
   } else {
     console.log(
       "Error parsing credentials from HTTP Response. Please try again."
@@ -158,7 +158,7 @@ async function loginViaBrowser() {
         {
           name: "host",
           message:
-            "Warning: SSO response did not contain a valid hostname. Please enter hostname of your Retool instance (ie: mycompany.retool.com)",
+            "Warning: SSO response did not contain a valid hostname. Please enter the hostname of your Retool instance (e.g., mycompany.retool.com)",
           type: "input",
         },
       ]);
@@ -172,7 +172,7 @@ async function loginViaBrowser() {
       accessToken,
       xsrf: xsrfToken,
     });
-    console.log("Credentials saved/updated successfully!");
+    console.log("Credentials saved and updated successfully!");
 
     if (!res.headersSent) {
       res.sendFile(path.join(__dirname, "../loginPages/loginSuccess.html"));
