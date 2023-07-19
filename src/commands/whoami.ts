@@ -15,6 +15,7 @@ const handler = function (argv: ArgumentsCamelCase) {
   const credentials = getCredentials();
   if (credentials) {
     if (
+      !process.env.DEBUG &&
       !argv.verbose &&
       credentials.firstName &&
       credentials.lastName &&

@@ -42,12 +42,12 @@ const handler = async function (argv: any) {
       type: "list",
       choices: [
         {
-          name: "Log in with email and password",
-          value: "email",
-        },
-        {
           name: "Log in using Google SSO in a web browser",
           value: "browser",
+        },
+        {
+          name: "Log in with email and password",
+          value: "email",
         },
         {
           name: "Log in by pasting in cookies",

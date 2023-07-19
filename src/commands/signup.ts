@@ -38,7 +38,9 @@ const handler = async function (argv: any) {
   }
 
   // Step 2: Call signup endpoint, get cookies.
-  const spinner = ora("Verifying that the email and password are valid on the server").start();
+  const spinner = ora(
+    "Verifying that the email and password are valid on the server"
+  ).start();
   const signupResponse = await postRequest(
     `https://login.retool.com/api/signup`,
     {

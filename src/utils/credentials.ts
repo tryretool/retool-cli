@@ -30,12 +30,12 @@ export function askForCookies() {
       {
         name: "xsrf",
         message:
-          "What is your XSRF token? (e.g., 26725f72-8129-47f7-835a-bca0e5dbcfe6) \n  You can find this by logging into Retool, and opening the cookies inspector in your browser's dev tools.\n  In Chrome, hit ⌘+⌥+I (Mac) or Ctrl+Shift+I (Windows, Linux) to open the dev tools.\n  Application tab > your-org.retool.com from the Cookies section on the left > double click the cookie value and copy it.",
+          "What is your XSRF token? (e.g., 26725f72-8129-47f7-835a-cba0e5dbcfe6) \n  Log into Retool, open cookies inspector.\n  In Chrome, hit ⌘+⌥+I (Mac) or Ctrl+Shift+I (Windows, Linux) to open dev tools.\n  Application tab > your-org.retool.com in Cookies menu > double click cookie value and copy it.",
         type: "input",
       },
       {
         name: "accessToken",
-        message: `What is your access token? It's a very long string, also found in the cookies inspector.`,
+        message: `What is your access token? It's also found in the cookies inspector.`,
         type: "input",
       },
     ])
