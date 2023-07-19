@@ -198,7 +198,7 @@ function logSuccess() {
       )} (${credentials.email}) ✅`
     );
   } else {
-    console.log("Credentials saved successfully!");
+    console.log("Successfully saved credentials.");
   }
 }
 

@@ -23,7 +23,7 @@ export async function generateApp(tableName: string) {
   spinner.stop();
 
   if (app.data.newPage?.uuid) {
-    console.log("App created successfully!");
+    console.log("Successfully created app.");
     console.log(
       `View it: https://${credentials.domain}/apps/${app.data.newPage.uuid}/`
     );

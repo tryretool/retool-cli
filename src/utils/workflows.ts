@@ -1,3 +1,4 @@
+const chalk = require("chalk");
 const ora = require("ora");
 
 import { generateWorkflowMetadata } from "./puppeteer";
@@ -34,9 +35,11 @@ export async function generateWorkflow(tableName: string) {
   );
   spinner.stop();
   if (workflow.data.id) {
-    console.log("Workflow created successfully!");
+    console.log("Successfully created a workflow. 🎉");
     console.log(
-      `View it: https://${credentials.domain}/workflows/${workflow.data.id}`
+      `${chalk.bold("View in browser:")} https://${
+        credentials.domain
+      }/workflows/${workflow.data.id}`
     );
   } else {
     console.log("Error creating workflow: ");
@@ -53,10 +56,12 @@ export async function generateWorkflow(tableName: string) {
     }
   );
   spinner.stop();
-  console.log("Workflow successfully deployed!");
+  console.log("Successfully deployed a workflow. 🚀");
   const domainParts = credentials.domain.split(".");
   if (workflow.data.apiKey && domainParts.length === 3) {
     const curlCommand = `curl -X POST --url "https://api.${domainParts[1]}.${domainParts[2]}/v1/workflows/${workflow.data.id}/startTrigger?workflowApiKey=${workflow.data.apiKey}" --data '{"type":"read"}' -H 'Content-Type: application/json'`;
-    console.log("Retool Cloud users can cURL it: ", curlCommand);
+    console.log(
+      `Retool Cloud users can ${chalk.bold("cURL it:")} ${curlCommand}`
+    );
   }
 }

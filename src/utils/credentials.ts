@@ -41,7 +41,7 @@ export function askForCookies() {
     ])
     .then(function (answer: Credentials) {
       persistCredentials(answer);
-      console.log("Credentials saved successfully!");
+      console.log("Successfully saved credentials.");
     });
 }
 
@@ -50,7 +50,8 @@ export function persistCredentials(credentials: Credentials) {
   try {
     fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(credentials));
   } catch (err) {
-    console.error("Error saving credentials to disk: ", err);
+    console.error("Error saving credentials to disk, exiting: ", err);
+    process.exit(1);
   }
 }
 

@@ -19,7 +19,7 @@ const handler = async function (argv: any) {
       {
         name: "overwrite",
         message:
-          "You're already logged into Retool. Do you want to log out and create a new account?",
+          "You're already logged in. Do you want to log out and create a new account?",
         type: "confirm",
       },
     ]);
@@ -56,8 +56,11 @@ const handler = async function (argv: any) {
   );
   const xsrfToken = xsrfTokenFromCookies(signupResponse.headers["set-cookie"]);
   if (!accessToken || !xsrfToken) {
+    if (process.env.DEBUG) {
+      console.log(signupResponse);
+    }
     console.log(
-      "Error creating account, response did not include access tokens, please try again."
+      "Error creating account, please try again or signup at https://login.retool.com/auth/signup?plan=free."
     );
     return;
   }
@@ -82,7 +85,7 @@ const handler = async function (argv: any) {
   );
 
   // Step 5: Persist credentials
-  console.log("Account created successfully!");
+  console.log("Successfully created account. 👌🏻");
   persistCredentials({
     accessToken,
     xsrf: xsrfToken,

@@ -530,8 +530,11 @@ export async function createTable(
 
   spinner.stop();
   console.log("Successfully created a RetoolDB. 🎉");
+  if (printConnectionString) {
+    console.log("");
+  }
   console.log(
-    `\n${chalk.bold("View in browser:")} https://${
+    `${chalk.bold("View in browser:")} https://${
       credentials.domain
     }/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
   );
