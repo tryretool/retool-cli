@@ -2,7 +2,6 @@ const axios = require("axios");
 const chalk = require("chalk");
 const open = require("open");
 const path = require("path");
-const cookieParser = require("cookie-parser");
 const inquirer = require("inquirer");
 
 import express from "express";
@@ -133,7 +132,6 @@ async function loginViaEmail() {
 async function loginViaBrowser() {
   // Start a short lived local server to listen for the SSO response.
   const app = express();
-  app.use(cookieParser());
 
   // Step 4: Handle the SSO response.
   // Success scenario format: http://localhost:3020/auth?redirect=https://mycompany.retool.com
