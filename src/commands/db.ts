@@ -1,4 +1,5 @@
 const axios = require("axios");
+const chalk = require("chalk");
 const { faker } = require("@faker-js/faker");
 const fs = require("fs");
 const inquirer = require("inquirer");
@@ -65,16 +66,20 @@ type RetoolDBField = {
 const command = "db";
 const describe = "Interface with Retool DB.";
 const builder: CommandModule["builder"] = {
+  list: {
+    alias: "l",
+    describe: "List all Retool DBs.",
+  },
   create: {
     alias: "c",
     describe: `Create a new Retool DB from column names. Usage:
     retool db -c <col1> <col2> ...`,
     type: "array",
   },
-  new: {
-    alias: "n",
-    describe: `Create a new Retool DB from a CSV file. Usage:
-    retool db -n <path-to-csv>`,
+  upload: {
+    alias: "u",
+    describe: `Upload a new Retool DB from a CSV file. Usage:
+    retool db -u <path-to-csv>`,
     type: "string",
     nargs: 1,
   },
@@ -88,10 +93,6 @@ const builder: CommandModule["builder"] = {
   gpt: {
     describe: `A modifier for the gendata command that uses GPT to generate data. Usage:
     retool db --gendata <db-name> --gpt`,
-  },
-  list: {
-    alias: "l",
-    describe: "List all Retool DBs.",
   },
 };
 const handler = async function (argv: any) {
@@ -114,19 +115,19 @@ const handler = async function (argv: any) {
   spinner.stop();
 
   // Handle `retool db --new <path-to-csv>`
-  if (argv.new) {
+  if (argv.upload) {
     // Verify file exists, is a csv, and is < 15MB.
     if (
-      !fs.existsSync(argv.new) ||
-      !argv.new.endsWith(".csv") ||
-      fs.statSync(argv.new).size > 15000000
+      !fs.existsSync(argv.upload) ||
+      !argv.upload.endsWith(".csv") ||
+      fs.statSync(argv.upload).size > 15000000
     ) {
       console.log("The file does not exist, is not a CSV, or is > 15MB.");
       return;
     }
 
     //Default to csv filename if no table name is provided.
-    let tableName = path.basename(argv.new).slice(0, -4);
+    let tableName = path.basename(argv.upload).slice(0, -4);
     const inputName = await inquirer.prompt([
       {
         name: "inputName",
@@ -141,7 +142,7 @@ const handler = async function (argv: any) {
     tableName = tableName.replace(/\s/g, "_");
 
     const spinner = ora("Parsing CSV").start();
-    const parseResult = await parseCSV(argv.new);
+    const parseResult = await parseCSV(argv.upload);
     spinner.stop();
     if (!parseResult.success) {
       console.log("Failed to parse CSV, error:");
@@ -188,20 +189,21 @@ const handler = async function (argv: any) {
   else if (argv.gendata) {
     // Verify that the provided db name exists.
     const tables = await fetchAllTables(credentials);
-    if (!tables?.map((table: any) => table.name).includes(argv.gendata)) {
-      console.log(`No Retool DB named ${argv.gendata} found.`);
+    const tableName = argv.gendata;
+    if (!tables?.map((table: any) => table.name).includes(tableName)) {
+      console.log(`No Retool DB named ${tableName} found.`);
       console.log(`Use \`retool db --list\` to list all Retool DBs.`);
       return;
     }
 
-    const spinner = ora(`Fetching ${argv.gendata} metadata`).start();
+    const spinner = ora(`Fetching ${tableName} metadata`).start();
 
     // Fetch Retool DB schema and data.
     const infoReq = getRequest(
-      `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${argv.gendata}/info`
+      `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${tableName}/info`
     );
     const dataReq = postRequest(
-      `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${argv.gendata}/data`,
+      `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${tableName}/data`,
       {
         filters: [],
         sorting: [],
@@ -327,7 +329,6 @@ const handler = async function (argv: any) {
         retoolDBInfo.tableInfo.primaryKeyColumn,
         primaryKeyMaxVal
       );
-      console.log(generatedData);
     }
 
     // Insert to Retool DB.
@@ -335,11 +336,16 @@ const handler = async function (argv: any) {
       `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
       {
         kind: "BulkInsertIntoTable",
-        tableName: argv.gendata,
+        tableName: tableName,
         additions: generatedData,
       }
     );
-    console.log("Successfully inserted data.");
+    console.log("Successfully inserted data. 🤘🏻");
+    console.log(
+      `\n${chalk.bold("View in browser:")} https://${
+        credentials.domain
+      }/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
+    );
   }
 };
 
@@ -475,9 +481,11 @@ export async function createTable(
   );
 
   spinner.stop();
-  console.log("Successfully created a RetoolDB!");
+  console.log("Successfully created a RetoolDB. 🎉");
   console.log(
-    `View in browswer: https://${credentials.domain}/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
+    `\n${chalk.bold("View in browser:")} https://${
+      credentials.domain
+    }/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
   );
   if (credentials.hasConnectionString && printConnectionString) {
     await logConnectionStringDetails();

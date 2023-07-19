@@ -1,4 +1,5 @@
 const axios = require("axios");
+const chalk = require("chalk");
 
 import { ConnectionStringParser } from "connection-string-parser";
 import { getCredentials } from "./credentials";
@@ -15,9 +16,15 @@ export async function logConnectionStringDetails() {
       hosts: [],
     }).parse(connectionString);
     console.log(
-      `Connect via psql: \`PGPASSWORD=${parsed.password} psql -h ${parsed.hosts[0].host} -U ${parsed.username} ${parsed.endpoint}`
+      `${chalk.bold("Connect via psql:")} PGPASSWORD=${
+        parsed.password
+      } psql -h ${parsed.hosts[0].host} -U ${parsed.username} ${
+        parsed.endpoint
+      }`
     );
-    console.log(`Postgres Connection URL: ${connectionString}`);
+    console.log(
+      `${chalk.bold("Postgres Connection URL:")} ${connectionString}`
+    );
   }
 }
 
