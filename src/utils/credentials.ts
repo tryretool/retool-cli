@@ -5,15 +5,16 @@ import { getRequest } from "./networking";
 
 export const CREDENTIALS_PATH = __dirname + "/.retool-cli-credentials";
 
-// The required properties are fetched during login.
-// The optional properties are fetched the first time the user runs `retool db`.
 export type Credentials = {
-  domain: string;
+  domain: string; // The 3 required properties are fetched during login.
   xsrf: string;
   accessToken: string;
-  gridId?: string;
+  gridId?: string; // The next 3 properties are fetched the first time user interacts with RetoolDB.
   retoolDBUuid?: string;
   hasConnectionString?: boolean;
+  firstName?: string; // The next 3 properties are sometimes fetched during login.
+  lastName?: string;
+  email?: string;
 };
 
 // Legacy way of getting credentials.
@@ -40,7 +41,7 @@ export function askForCookies() {
     ])
     .then(function (answer: Credentials) {
       persistCredentials(answer);
-      console.log("Credentials saved and updated successfully!");
+      console.log("Credentials saved successfully!");
     });
 }
 
@@ -70,20 +71,11 @@ export function doCredentialsExist(): boolean {
 // Delete credentials from disk if they exist.
 export function deleteCredentials() {
   if (!fs.existsSync(CREDENTIALS_PATH)) {
-    console.log(
-      `No credentials found, nothing to delete! To log in, run: retool login`
-    );
+    console.log(`No credentials found! To log in, run: retool login`);
     return;
   }
 
-  fs.unlinkSync(CREDENTIALS_PATH, (err: any) => {
-    if (err) {
-      console.error("Error deleting credentials from disk: ", err);
-      return;
-    }
-
-    console.log("Credentials successfully deleted.");
-  });
+  fs.unlinkSync(CREDENTIALS_PATH);
 }
 
 // Fetch gridId and retoolDBUuid from Retool. Persist to disk.

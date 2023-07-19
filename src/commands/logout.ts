@@ -7,6 +7,7 @@ const builder = {};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handler = function (argv: any) {
   deleteCredentials();
+  console.log("Successfully logged out. 👋🏻");
 };
 
 const commandModule: CommandModule = {

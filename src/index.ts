@@ -11,7 +11,7 @@ require("yargs/yargs")(process.argv.slice(2))
   .demandCommand()
   .strict()
   .usage(
-    "A CLI tool to interface with Retool. For feedback and issues visit https://github.com/tryretool/retool-cli.\n\nUsage: retool <command>"
+    "Work seamlessly with Retool from the command line. For feedback and issues visit https://github.com/tryretool/retool-cli.\n\nUsage: retool <command> [flags]"
   ).argv;
 
 // Setup axios defaults.

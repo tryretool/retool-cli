@@ -25,6 +25,7 @@
   "dependencies": {
     "@faker-js/faker": "^8.0.2",
     "axios": "^1.4.0",
+    "chalk": "^4.1.2",
     "connection-string-parser": "^1.0.4",
     "cookie-parser": "^1.4.6",
     "csv-parser": "^3.0.0",

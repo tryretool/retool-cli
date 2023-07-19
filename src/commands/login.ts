@@ -1,3 +1,5 @@
+const axios = require("axios");
+const chalk = require("chalk");
 const open = require("open");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -5,12 +7,13 @@ const inquirer = require("inquirer");
 
 import express from "express";
 import {
+  getCredentials,
   persistCredentials,
   doCredentialsExist,
   askForCookies,
 } from "../utils/credentials";
 import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
-import { postRequest } from "../utils/networking";
+import { postRequest, getRequest } from "../utils/networking";
 import { CommandModule } from "yargs";
 
 const command = "login";
@@ -102,7 +105,7 @@ async function loginViaEmail() {
       origin: "https://login.retool.com",
     }
   );
-  const { redirectUri } = authResponse.data; // Tip: auth.data also contains a user object with lots of info.
+  const { redirectUri } = authResponse.data;
   const redirectUrl = redirectUri ? new URL(redirectUri) : undefined;
   const accessToken = accessTokenFromCookies(
     authResponse.headers["set-cookie"]
@@ -115,8 +118,11 @@ async function loginViaEmail() {
       domain: redirectUrl.hostname,
       accessToken,
       xsrf: xsrfToken,
+      firstName: authResponse.data.user?.firstName,
+      lastName: authResponse.data.user?.lastName,
+      email: authResponse.data.user?.email,
     });
-    console.log("Credentials saved and updated successfully!");
+    logSuccess();
   } else {
     console.log(
       "Error parsing credentials from HTTP Response. Please try again."
@@ -133,7 +139,7 @@ async function loginViaBrowser() {
   // Success scenario format: http://localhost:3020/auth?redirect=https://mycompany.retool.com
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   app.get("/auth", async function (req, res) {
-    let domain, url, accessToken, xsrfToken;
+    let url, accessToken, xsrfToken;
 
     try {
       accessToken = decodeURIComponent(req.query.accessToken as string);
@@ -143,40 +149,27 @@ async function loginViaBrowser() {
       console.log(e);
     }
 
-    if (!accessToken || !xsrfToken) {
-      console.log(
-        "Error: SSO response missing access token or xsrf token. Try again."
-      );
+    if (!accessToken || !xsrfToken || !url) {
+      console.log("Error: SSO response missing information. Try again.");
       res.sendFile(path.join(__dirname, "../loginPages/loginFail.html"));
       server_online = false;
       return;
     }
 
-    if (!req.query.redirect || !url) {
-      res.sendFile(path.join(__dirname, "../loginPages/loginSuccess.html"));
-      const { host } = await inquirer.prompt([
-        {
-          name: "host",
-          message:
-            "Warning: SSO response did not contain a valid hostname. Please enter the hostname of your Retool instance (e.g., mycompany.retool.com)",
-          type: "input",
-        },
-      ]);
-      domain = host;
-    } else {
-      domain = url.port ? `${url.hostname}:${url.port}` : url.hostname;
-    }
+    axios.defaults.headers["x-xsrf-token"] = xsrfToken;
+    axios.defaults.headers.cookie = `accessToken=${accessToken};`;
+    const userRes = await getRequest(`https://${url.hostname}/api/user`);
 
     persistCredentials({
-      domain,
+      domain: url.hostname,
       accessToken,
       xsrf: xsrfToken,
+      firstName: userRes.data.user?.firstName,
+      lastName: userRes.data.user?.lastName,
+      email: userRes.data.user?.email,
     });
-    console.log("Credentials saved and updated successfully!");
-
-    if (!res.headersSent) {
-      res.sendFile(path.join(__dirname, "../loginPages/loginSuccess.html"));
-    }
+    logSuccess();
+    res.sendFile(path.join(__dirname, "../loginPages/loginSuccess.html"));
     server_online = false;
   });
   const server = app.listen(3020);
@@ -196,6 +189,19 @@ async function loginViaBrowser() {
   }
 
   server.close();
+}
+
+function logSuccess() {
+  const credentials = getCredentials();
+  if (credentials?.firstName && credentials.lastName && credentials.email) {
+    console.log(
+      `Logged in as ${chalk.bold(credentials.firstName)} ${chalk.bold(
+        credentials.lastName
+      )} (${credentials.email}) ✅`
+    );
+  } else {
+    console.log("Credentials saved successfully!");
+  }
 }
 
 const commandModule: CommandModule = {

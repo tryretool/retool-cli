@@ -8,7 +8,7 @@ import { generateApp } from "../utils/apps";
 import { generateWorkflow } from "../utils/workflows";
 
 const command = "scaffold";
-const describe = "Scaffold a Retool DB, Workflow, or App.";
+const describe = "Scaffold a Retool DB, Workflow, and App.";
 const builder: CommandModule["builder"] = {
   name: {
     alias: "n",
