@@ -83,6 +83,13 @@ const builder: CommandModule["builder"] = {
     type: "string",
     nargs: 1,
   },
+  delete: {
+    alias: "d",
+    describe: `Delete a Retool DB. Usage:
+    retool db -d <db-name>`,
+    type: "string",
+    nargs: 1,
+  },
   gendata: {
     alias: "g",
     describe: `Generate data for a Retool DB interactively. Usage:
@@ -153,6 +160,7 @@ const handler = async function (argv: any) {
     const { headers, rows } = parseResult;
     await createTable(tableName, headers, rows, credentials, true);
   }
+
   // Handle `retool db --create <column-name> <column-name> ...`
   else if (argv.create) {
     let { tableName } = await inquirer.prompt([
@@ -173,6 +181,7 @@ const handler = async function (argv: any) {
 
     await createTable(tableName, argv.create, undefined, credentials, true);
   }
+
   // Handle `retool db --list`
   else if (argv.list) {
     const tables = await fetchAllTables(credentials);
@@ -185,20 +194,49 @@ const handler = async function (argv: any) {
     }
     console.log("No Retool DBs found.");
   }
-  // Handle `retool db --gendata <db-name>`
-  else if (argv.gendata) {
+
+  // Handle `retool db --delete <db-name>`
+  else if (argv.delete) {
     // Verify that the provided db name exists.
-    const tables = await fetchAllTables(credentials);
-    const tableName = argv.gendata;
-    if (!tables?.map((table: any) => table.name).includes(tableName)) {
-      console.log(`No Retool DB named ${tableName} found.`);
-      console.log(`Use \`retool db --list\` to list all Retool DBs.`);
+    const tableName = argv.delete;
+    await verifyTableExists(tableName, credentials);
+
+    // Confirm deletion.
+    const { confirm } = await inquirer.prompt([
+      {
+        name: "confirm",
+        message: `Are you sure you want to delete ${tableName}?`,
+        type: "confirm",
+      },
+    ]);
+    if (!confirm) {
       return;
     }
 
-    const spinner = ora(`Fetching ${tableName} metadata`).start();
+    // Delete the table.
+    const spinner = ora(`Deleting ${tableName}`).start();
+    await postRequest(
+      `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
+      {
+        kind: "DeleteTable",
+        payload: {
+          table: tableName,
+        },
+      }
+    );
+    spinner.stop();
+
+    console.log(`Deleted ${tableName}. 🗑️`);
+  }
+
+  // Handle `retool db --gendata <db-name>`
+  else if (argv.gendata) {
+    // Verify that the provided db name exists.
+    const tableName = argv.gendata;
+    await verifyTableExists(tableName, credentials);
 
     // Fetch Retool DB schema and data.
+    const spinner = ora(`Fetching ${tableName} metadata`).start();
     const infoReq = getRequest(
       `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${tableName}/info`
     );
@@ -369,6 +407,16 @@ function parseDBData(data: string): string[][] {
   } catch (e) {
     console.log("Error parsing DB data.");
     console.log(e);
+    process.exit(1);
+  }
+}
+
+// Verify that the table exists in Retool DB, otherwise exit.
+async function verifyTableExists(tableName: string, credentials: Credentials) {
+  const tables = await fetchAllTables(credentials);
+  if (!tables?.map((table: any) => table.name).includes(tableName)) {
+    console.log(`No Retool DB named ${tableName} found.`);
+    console.log(`Use \`retool db --list\` to list all Retool DBs.`);
     process.exit(1);
   }
 }
