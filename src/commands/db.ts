@@ -68,38 +68,38 @@ const describe = "Interface with Retool DB.";
 const builder: CommandModule["builder"] = {
   list: {
     alias: "l",
-    describe: "List all Retool DBs.",
+    describe: "List all tables in Retool DB.",
   },
   create: {
     alias: "c",
-    describe: `Create a new Retool DB from column names. Usage:
+    describe: `Create a new table from column names. Usage:
     retool db -c <col1> <col2> ...`,
     type: "array",
   },
   upload: {
     alias: "u",
-    describe: `Upload a new Retool DB from a CSV file. Usage:
+    describe: `Upload a new table from a CSV file. Usage:
     retool db -u <path-to-csv>`,
     type: "string",
     nargs: 1,
   },
   delete: {
     alias: "d",
-    describe: `Delete a Retool DB. Usage:
-    retool db -d <db-name>`,
+    describe: `Delete a table. Usage:
+    retool db -d <table-name>`,
     type: "string",
     nargs: 1,
   },
   gendata: {
     alias: "g",
-    describe: `Generate data for a Retool DB interactively. Usage:
-    retool db -g <db-name>`,
+    describe: `Generate data for a table interactively. Usage:
+    retool db -g <table-name>`,
     type: "string",
     nargs: 1,
   },
   gpt: {
     describe: `A modifier for the gendata command that uses GPT to generate data. Usage:
-    retool db --gendata <db-name> --gpt`,
+    retool db --gendata <table-name> --gpt`,
   },
 };
 const handler = async function (argv: any) {
@@ -135,7 +135,7 @@ const handler = async function (argv: any) {
 
     //Default to csv filename if no table name is provided.
     let tableName = path.basename(argv.upload).slice(0, -4);
-    const inputName = await inquirer.prompt([
+    const { inputName } = await inquirer.prompt([
       {
         name: "inputName",
         message: "Table name? If blank, defaults to CSV filename.",
@@ -195,7 +195,7 @@ const handler = async function (argv: any) {
     console.log("No Retool DBs found.");
   }
 
-  // Handle `retool db --delete <db-name>`
+  // Handle `retool db --delete <table-name>`
   else if (argv.delete) {
     // Verify that the provided db name exists.
     const tableName = argv.delete;
@@ -229,7 +229,7 @@ const handler = async function (argv: any) {
     console.log(`Deleted ${tableName}. 🗑️`);
   }
 
-  // Handle `retool db --gendata <db-name>`
+  // Handle `retool db --gendata <table-name>`
   else if (argv.gendata) {
     // Verify that the provided db name exists.
     const tableName = argv.gendata;
@@ -385,6 +385,8 @@ const handler = async function (argv: any) {
       }/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
     );
   }
+
+  console.log("No flag specified. See `retool db --help` for available flags.");
 };
 
 // data param is in format:
@@ -520,26 +522,31 @@ export async function createTable(
       },
     },
   };
-
-  await postRequest(
+  const createTableResult = await postRequest(
     `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
     {
       ...payload,
     }
   );
-
   spinner.stop();
-  console.log("Successfully created a RetoolDB. 🎉");
-  if (printConnectionString) {
-    console.log("");
-  }
-  console.log(
-    `${chalk.bold("View in browser:")} https://${
-      credentials.domain
-    }/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
-  );
-  if (credentials.hasConnectionString && printConnectionString) {
-    await logConnectionStringDetails();
+
+  if (!createTableResult.data.success) {
+    console.log("Error creating table in RetoolDB.");
+    console.log(createTableResult.data);
+    process.exit(1);
+  } else {
+    console.log("Successfully created a table in RetoolDB. 🎉");
+    if (printConnectionString) {
+      console.log("");
+    }
+    console.log(
+      `${chalk.bold("View in browser:")} https://${
+        credentials.domain
+      }/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
+    );
+    if (credentials.hasConnectionString && printConnectionString) {
+      await logConnectionStringDetails();
+    }
   }
 }
 
