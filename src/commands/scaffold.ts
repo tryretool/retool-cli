@@ -12,14 +12,16 @@ const describe = "Scaffold a Retool DB, Workflow, and App.";
 const builder: CommandModule["builder"] = {
   name: {
     alias: "n",
-    describe: "Name of DB to scaffold.",
+    describe: `Name of DB to scaffold. Usage:
+    retool scaffold -n <db_name> -c <col1> <col2>`,
     type: "string",
     nargs: 1,
     demandOption: true,
   },
   columns: {
     alias: "c",
-    describe: "Column names in DB to scaffold.",
+    describe: `Column names in DB to scaffold. Usage:
+    retool scaffold -n <db_name> -c <col1> <col2>`,
     type: "array",
     demandOption: true,
   },
