@@ -107,6 +107,7 @@ const handler = async function (argv: any) {
   let credentials = getCredentials();
   if (!credentials) {
     spinner.stop();
+    console.log(`No credentials found. To log in, run: \`retool login\``);
     return;
   }
   axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
@@ -116,6 +117,7 @@ const handler = async function (argv: any) {
     credentials = getCredentials();
     if (!credentials?.gridId || !credentials?.retoolDBUuid) {
       spinner.stop();
+      console.log(`Error: No Retool DB credentials found.`);
       return;
     }
   }
@@ -328,6 +330,14 @@ const handler = async function (argv: any) {
           type: "input",
         },
       ]);
+      if (Number.isNaN(parseInt(rowCount))) {
+        console.log(`Error: Must provide a number.`);
+        return;
+      }
+      if (rowCount < 0) {
+        console.log(`Error: Cannot generate <1 rows.`);
+        return;
+      }
       if (rowCount > MAX_BATCH_SIZE) {
         console.log(
           `Error: Cannot generate more than ${MAX_BATCH_SIZE} rows at a time.`
@@ -386,7 +396,12 @@ const handler = async function (argv: any) {
     );
   }
 
-  console.log("No flag specified. See `retool db --help` for available flags.");
+  // No flag specified.
+  else {
+    console.log(
+      "No flag specified. See `retool db --help` for available flags."
+    );
+  }
 };
 
 // data param is in format:
@@ -417,8 +432,9 @@ function parseDBData(data: string): string[][] {
 async function verifyTableExists(tableName: string, credentials: Credentials) {
   const tables = await fetchAllTables(credentials);
   if (!tables?.map((table: any) => table.name).includes(tableName)) {
-    console.log(`No Retool DB named ${tableName} found.`);
-    console.log(`Use \`retool db --list\` to list all Retool DBs.`);
+    console.log(`No table named ${tableName} found in Retool DB. 😓`);
+    console.log(`Use \`retool db --list\` to list all tables.`);
+    console.log(`Use \`retool db --create\` to create a new table.`);
     process.exit(1);
   }
 }

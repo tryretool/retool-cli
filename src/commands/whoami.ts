@@ -30,6 +30,8 @@ const handler = function (argv: ArgumentsCamelCase) {
       console.log("You are logged in with credentials:");
       console.log(credentials);
     }
+  } else {
+    console.log(`No credentials found. To log in, run: \`retool login\``);
   }
 };
 

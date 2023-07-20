@@ -58,7 +58,6 @@ export function persistCredentials(credentials: Credentials) {
 // Get credentials from disk.
 export function getCredentials(): Credentials | undefined {
   if (!fs.existsSync(CREDENTIALS_PATH)) {
-    console.log(`No credentials found! To log in, run: retool login`);
     return;
   }
   return JSON.parse(fs.readFileSync(CREDENTIALS_PATH));

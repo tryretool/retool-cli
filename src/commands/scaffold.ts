@@ -31,6 +31,7 @@ const handler = async function (argv: any) {
   let credentials = getCredentials();
   if (!credentials) {
     spinner.stop();
+    console.log(`No credentials found. To log in, run: \`retool login\``);
     return;
   }
   axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
