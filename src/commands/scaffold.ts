@@ -31,7 +31,9 @@ const handler = async function (argv: any) {
   let credentials = getCredentials();
   if (!credentials) {
     spinner.stop();
-    console.log(`No credentials found. To log in, run: \`retool login\``);
+    console.log(
+      `Error: No credentials found. To log in, run: \`retool login\``
+    );
     return;
   }
   axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
@@ -41,6 +43,7 @@ const handler = async function (argv: any) {
     credentials = getCredentials();
     if (!credentials?.gridId || !credentials?.retoolDBUuid) {
       spinner.stop();
+      console.log(`Error: No Retool DB credentials found.`);
       return;
     }
   }

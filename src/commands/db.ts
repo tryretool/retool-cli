@@ -129,9 +129,9 @@ const handler = async function (argv: any) {
     if (
       !fs.existsSync(argv.upload) ||
       !argv.upload.endsWith(".csv") ||
-      fs.statSync(argv.upload).size > 15000000
+      fs.statSync(argv.upload).size > 18000000
     ) {
-      console.log("The file does not exist, is not a CSV, or is > 15MB.");
+      console.log("The file does not exist, is not a CSV, or is > 18MB.");
       return;
     }
 
@@ -188,13 +188,13 @@ const handler = async function (argv: any) {
   else if (argv.list) {
     const tables = await fetchAllTables(credentials);
     if (tables?.length > 0) {
-      console.log("Retool DBs:");
+      console.log("Tables in Retool DB:");
       tables.forEach((table: any) => {
         console.log(table.name);
       });
       return;
     }
-    console.log("No Retool DBs found.");
+    console.log("No tables found.");
   }
 
   // Handle `retool db --delete <table-name>`
@@ -422,7 +422,7 @@ function parseDBData(data: string): string[][] {
     }
     return parsedRows;
   } catch (e) {
-    console.log("Error parsing DB data.");
+    console.log("Error parsing table data.");
     console.log(e);
     process.exit(1);
   }
@@ -498,7 +498,7 @@ function generateDataForColumn(field: RetoolDBField): string {
 async function fetchAllTables(
   credentials: Credentials
 ): Promise<any | undefined> {
-  const spinner = ora("Fetching Retool DBs").start();
+  const spinner = ora("Fetching tables from Retool DB").start();
   const fetchDBsResponse = await getRequest(
     `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`
   );

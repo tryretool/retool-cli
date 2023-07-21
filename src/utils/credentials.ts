@@ -91,9 +91,16 @@ export async function fetchDBCredentials() {
   );
 
   // 2. Filter down to Retool DB UUID
-  const retoolDBs = resources.data.resources.filter(
+  const retoolDBs = resources?.data?.resources?.filter(
     (resource: any) => resource.displayName === "retool_db"
   );
+  if (retoolDBs?.length < 1) {
+    console.log(
+      `\nError: Retool DB not found. Create one at https://${credentials.domain}/resources`
+    );
+    return;
+  }
+
   const retoolDBUuid = retoolDBs[0].name;
 
   // 3. Fetch Grid Info
@@ -103,7 +110,7 @@ export async function fetchDBCredentials() {
   persistCredentials({
     ...credentials,
     retoolDBUuid,
-    gridId: grid.data.gridInfo.id,
-    hasConnectionString: grid.data.gridInfo?.connectionString?.length > 0,
+    gridId: grid?.data?.gridInfo?.id,
+    hasConnectionString: grid?.data?.gridInfo?.connectionString?.length > 0,
   });
 }
