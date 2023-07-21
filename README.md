@@ -1,6 +1,8 @@
 # Retool CLI
 
-A CLI tool to interface with [Retool](https://retool.com/). A Retool account is required to use. Run `retool signup` to create an account in 20 seconds.
+A command line interface for [Retool](https://retool.com/). A Retool account is required to use. Run `retool signup` to create an account in 20 seconds.
+
+Put up a PR or open an issue in this repository for feature requests.
 
 ## Installation
 
