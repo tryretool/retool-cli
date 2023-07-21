@@ -40,6 +40,7 @@ export function askForCookies() {
       },
     ])
     .then(function (answer: Credentials) {
+      validateCookies(answer);
       persistCredentials(answer);
       console.log("Successfully saved credentials.");
     });
@@ -113,4 +114,27 @@ export async function fetchDBCredentials() {
     gridId: grid?.data?.gridInfo?.id,
     hasConnectionString: grid?.data?.gridInfo?.connectionString?.length > 0,
   });
+}
+
+function validateCookies(credentials: Credentials) {
+  // https://stackoverflow.com/questions/7905929/how-to-test-valid-uuid-guid
+  const uuidRegEx =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+  // https://stackoverflow.com/questions/61802832/regex-to-match-jwt
+  const jwtRegEx = /^[\w-]+\.[\w-]+\.[\w-]+$/;
+  // https://www.regextester.com/23
+  const hostnameRegEx =
+    /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;
+  if (!credentials.xsrf.match(uuidRegEx)) {
+    console.log("Error: XSRF token is invalid.");
+    process.exit(1);
+  }
+  if (!credentials.accessToken.match(jwtRegEx)) {
+    console.log("Error: Access token is invalid.");
+    process.exit(1);
+  }
+  if (!credentials.domain.match(hostnameRegEx)) {
+    console.log("Error: Domain is invalid.");
+    process.exit(1);
+  }
 }
