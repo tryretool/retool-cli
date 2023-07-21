@@ -5,7 +5,7 @@ const ora = require("ora");
 import { CommandModule } from "yargs";
 import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
 import { persistCredentials, doCredentialsExist } from "../utils/credentials";
-import { isEmailValid } from "../utils/emailValidation";
+import { isEmailValid } from "../utils/validation";
 import { postRequest, getRequest } from "../utils/networking";
 
 const command = "signup";

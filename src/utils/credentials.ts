@@ -1,3 +1,5 @@
+const axios = require("axios");
+const ora = require("ora");
 const fs = require("fs");
 const inquirer = require("inquirer");
 
@@ -90,7 +92,7 @@ export function deleteCredentials() {
 }
 
 // Fetch gridId and retoolDBUuid from Retool. Persist to disk.
-export async function fetchDBCredentials() {
+async function fetchDBCredentials() {
   const credentials = getCredentials();
   if (!credentials) {
     return;
@@ -124,4 +126,29 @@ export async function fetchDBCredentials() {
     gridId: grid?.data?.gridInfo?.id,
     hasConnectionString: grid?.data?.gridInfo?.connectionString?.length > 0,
   });
+}
+
+export async function getAndVerifyFullCredentials() {
+  const spinner = ora("Verifying Retool DB credentials").start();
+  let credentials = getCredentials();
+  if (!credentials) {
+    spinner.stop();
+    console.log(
+      `Error: No credentials found. To log in, run: \`retool login\``
+    );
+    process.exit(1);
+  }
+  axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
+  axios.defaults.headers.cookie = `accessToken=${credentials.accessToken};`;
+  if (!credentials.gridId || !credentials.retoolDBUuid) {
+    await fetchDBCredentials();
+    credentials = getCredentials();
+    if (!credentials?.gridId || !credentials?.retoolDBUuid) {
+      spinner.stop();
+      console.log(`Error: No Retool DB credentials found.`);
+      process.exit(1);
+    }
+  }
+  spinner.stop();
+  return credentials;
 }

@@ -7,14 +7,11 @@ const path = require("path");
 const ora = require("ora");
 
 import { parseCSV } from "../utils/csv";
-import {
-  getCredentials,
-  fetchDBCredentials,
-  Credentials,
-} from "../utils/credentials";
+import { Credentials, getAndVerifyFullCredentials } from "../utils/credentials";
 import { logConnectionStringDetails } from "../utils/connectionString";
 import { getRequest, postRequest } from "../utils/networking";
 import { CommandModule } from "yargs";
+import { collectTableName } from "../utils/table";
 
 export type FieldMapping = Array<{
   csvField: string;
@@ -103,25 +100,7 @@ const builder: CommandModule["builder"] = {
   },
 };
 const handler = async function (argv: any) {
-  const spinner = ora("Verifying Retool DB credentials").start();
-  let credentials = getCredentials();
-  if (!credentials) {
-    spinner.stop();
-    console.log(`No credentials found. To log in, run: \`retool login\``);
-    return;
-  }
-  axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
-  axios.defaults.headers.cookie = `accessToken=${credentials.accessToken};`;
-  if (!credentials.gridId || !credentials.retoolDBUuid) {
-    await fetchDBCredentials();
-    credentials = getCredentials();
-    if (!credentials?.gridId || !credentials?.retoolDBUuid) {
-      spinner.stop();
-      console.log(`Error: No Retool DB credentials found.`);
-      return;
-    }
-  }
-  spinner.stop();
+  const credentials = await getAndVerifyFullCredentials();
 
   // Handle `retool db --new <path-to-csv>`
   if (argv.upload) {
@@ -165,22 +144,7 @@ const handler = async function (argv: any) {
 
   // Handle `retool db --create <column-name> <column-name> ...`
   else if (argv.create) {
-    let { tableName } = await inquirer.prompt([
-      {
-        name: "tableName",
-        message: "Table name?",
-        type: "input",
-      },
-    ]);
-
-    if (tableName.length === 0) {
-      console.log("Error: Table name cannot be blank.");
-      return;
-    }
-
-    // Remove spaces from table name.
-    tableName = tableName.replace(/\s/g, "_");
-
+    const tableName = await collectTableName();
     await createTable(tableName, argv.create, undefined, credentials, true);
   }
 
