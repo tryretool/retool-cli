@@ -1,6 +1,6 @@
 const axios = require("axios");
 const chalk = require("chalk");
-const { faker } = require("@faker-js/faker");
+const { faker } = require("@faker-js/faker/locale/en");
 const fs = require("fs");
 const inquirer = require("inquirer");
 const path = require("path");
