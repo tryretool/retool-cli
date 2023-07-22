@@ -1,4 +1,3 @@
-const axios = require("axios");
 const chalk = require("chalk");
 const { faker } = require("@faker-js/faker/locale/en");
 const fs = require("fs");
@@ -11,7 +10,7 @@ import { Credentials, getAndVerifyFullCredentials } from "../utils/credentials";
 import { logConnectionStringDetails } from "../utils/connectionString";
 import { getRequest, postRequest } from "../utils/networking";
 import { CommandModule } from "yargs";
-import { collectTableName } from "../utils/table";
+import { collectColumnNames, collectTableName } from "../utils/table";
 
 export type FieldMapping = Array<{
   csvField: string;
@@ -69,8 +68,7 @@ const builder: CommandModule["builder"] = {
   },
   create: {
     alias: "c",
-    describe: `Create a new table from column names. Usage:
-    retool db -c <col1> <col2> ...`,
+    describe: `Create a new table interactively`,
     type: "array",
   },
   upload: {
@@ -145,7 +143,8 @@ const handler = async function (argv: any) {
   // Handle `retool db --create <column-name> <column-name> ...`
   else if (argv.create) {
     const tableName = await collectTableName();
-    await createTable(tableName, argv.create, undefined, credentials, true);
+    const colNames = await collectColumnNames();
+    await createTable(tableName, colNames, undefined, credentials, true);
   }
 
   // Handle `retool db --list`
