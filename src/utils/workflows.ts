@@ -14,8 +14,7 @@ type Workflow = {
   deployedBy: string;
 };
 
-// Fetch all existing Workflows.
-export async function fetchAllWorkflows(
+export async function getAllWorkflows(
   credentials: Credentials
 ): Promise<Array<Workflow> | undefined> {
   const spinner = ora("Fetching Workflows").start();
@@ -48,7 +47,7 @@ export async function deleteWorkflow(
   }
 
   // Verify that the provided workflowName exists.
-  const allWorkflows = await fetchAllWorkflows(credentials);
+  const allWorkflows = await getAllWorkflows(credentials);
   const workflow = allWorkflows?.filter((workflow) => {
     if (workflow.name === workflowName) {
       return workflow;
