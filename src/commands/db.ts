@@ -6,11 +6,17 @@ const path = require("path");
 const ora = require("ora");
 
 import { parseCSV } from "../utils/csv";
-import { Credentials, getAndVerifyFullCredentials } from "../utils/credentials";
-import { logConnectionStringDetails } from "../utils/connectionString";
+import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { getRequest, postRequest } from "../utils/networking";
 import { CommandModule } from "yargs";
-import { collectColumnNames, collectTableName } from "../utils/table";
+import {
+  collectColumnNames,
+  collectTableName,
+  createTable,
+  deleteTable,
+  fetchAllTables,
+  verifyTableExists,
+} from "../utils/table";
 
 export type FieldMapping = Array<{
   csvField: string;
@@ -162,36 +168,7 @@ const handler = async function (argv: any) {
 
   // Handle `retool db --delete <table-name>`
   else if (argv.delete) {
-    // Verify that the provided db name exists.
-    const tableName = argv.delete;
-    await verifyTableExists(tableName, credentials);
-
-    // Confirm deletion.
-    const { confirm } = await inquirer.prompt([
-      {
-        name: "confirm",
-        message: `Are you sure you want to delete ${tableName}?`,
-        type: "confirm",
-      },
-    ]);
-    if (!confirm) {
-      return;
-    }
-
-    // Delete the table.
-    const spinner = ora(`Deleting ${tableName}`).start();
-    await postRequest(
-      `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
-      {
-        kind: "DeleteTable",
-        payload: {
-          table: tableName,
-        },
-      }
-    );
-    spinner.stop();
-
-    console.log(`Deleted ${tableName}. 🗑️`);
+    await deleteTable(argv.delete, credentials);
   }
 
   // Handle `retool db --gendata <table-name>`
@@ -391,17 +368,6 @@ function parseDBData(data: string): string[][] {
   }
 }
 
-// Verify that the table exists in Retool DB, otherwise exit.
-async function verifyTableExists(tableName: string, credentials: Credentials) {
-  const tables = await fetchAllTables(credentials);
-  if (!tables?.map((table: any) => table.name).includes(tableName)) {
-    console.log(`No table named ${tableName} found in Retool DB. 😓`);
-    console.log(`Use \`retool db --list\` to list all tables.`);
-    console.log(`Use \`retool db --create\` to create a new table.`);
-    process.exit(1);
-  }
-}
-
 function generateData(
   fields: Array<RetoolDBField>,
   rowCount: number,
@@ -453,79 +419,6 @@ function generateDataForColumn(field: RetoolDBField): string {
       return faker.number.int(1000);
     default:
       return "";
-  }
-}
-
-// Fetches all existing tables from a Retool DB.
-// TODO: Type tables.
-async function fetchAllTables(
-  credentials: Credentials
-): Promise<any | undefined> {
-  const spinner = ora("Fetching tables from Retool DB").start();
-  const fetchDBsResponse = await getRequest(
-    `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`
-  );
-  spinner.stop();
-
-  if (fetchDBsResponse.data) {
-    const { tables } = fetchDBsResponse.data.gridInfo;
-    return tables;
-  }
-}
-
-export async function createTable(
-  tableName: string,
-  headers: string[],
-  rows: string[][] | undefined,
-  credentials: Credentials,
-  printConnectionString: boolean
-) {
-  const spinner = ora("Uploading Table").start();
-  const fieldMapping: FieldMapping = headers.map((header) => ({
-    csvField: header,
-    dbField: header,
-    ignored: false,
-  }));
-
-  // See NewTable.tsx if implementing more complex logic.
-  const payload = {
-    kind: "CreateTable",
-    payload: {
-      name: tableName,
-      fieldMapping,
-      data: rows,
-      allowSchemaEditOverride: true,
-      primaryKey: {
-        kind: headers.includes("id") ? "CustomColumn" : "IntegerAutoIncrement",
-        name: "id",
-      },
-    },
-  };
-  const createTableResult = await postRequest(
-    `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
-    {
-      ...payload,
-    }
-  );
-  spinner.stop();
-
-  if (!createTableResult.data.success) {
-    console.log("Error creating table in RetoolDB.");
-    console.log(createTableResult.data);
-    process.exit(1);
-  } else {
-    console.log("Successfully created a table in RetoolDB. 🎉");
-    if (printConnectionString) {
-      console.log("");
-    }
-    console.log(
-      `${chalk.bold("View in browser:")} https://${
-        credentials.domain
-      }/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
-    );
-    if (credentials.hasConnectionString && printConnectionString) {
-      await logConnectionStringDetails();
-    }
   }
 }
 
