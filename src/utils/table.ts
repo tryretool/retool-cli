@@ -38,21 +38,26 @@ export async function fetchAllTables(
   }
 }
 
-export async function deleteTable(tableName: string, credentials: Credentials) {
+export async function deleteTable(
+  tableName: string,
+  credentials: Credentials,
+  confirmDeletion: boolean
+) {
+  if (confirmDeletion) {
+    const { confirm } = await inquirer.prompt([
+      {
+        name: "confirm",
+        message: `Are you sure you want to delete the ${tableName} table?`,
+        type: "confirm",
+      },
+    ]);
+    if (!confirm) {
+      process.exit(0);
+    }
+  }
+
   // Verify that the provided db name exists.
   await verifyTableExists(tableName, credentials);
-
-  // Confirm deletion.
-  const { confirm } = await inquirer.prompt([
-    {
-      name: "confirm",
-      message: `Are you sure you want to delete the ${tableName} table?`,
-      type: "confirm",
-    },
-  ]);
-  if (!confirm) {
-    process.exit(0);
-  }
 
   // Delete the table.
   const spinner = ora(`Deleting ${tableName}`).start();

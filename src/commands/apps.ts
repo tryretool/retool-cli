@@ -35,7 +35,7 @@ const handler = async function (argv: any) {
 
   // Handle `retool apps -d <app-name>`
   else if (argv.delete) {
-    await deleteApp(argv.delete, credentials);
+    await deleteApp(argv.delete, credentials, true);
   }
 
   // No flag specified.

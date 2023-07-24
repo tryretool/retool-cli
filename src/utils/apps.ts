@@ -1,4 +1,5 @@
 const ora = require("ora");
+const inquirer = require("inquirer");
 
 import chalk from "chalk";
 import { Credentials } from "./credentials";
@@ -47,7 +48,25 @@ export async function createApp(
   }
 }
 
-export async function deleteApp(appName: string, credentials: Credentials) {
+export async function deleteApp(
+  appName: string,
+  credentials: Credentials,
+  confirmDeletion: boolean
+) {
+  if (confirmDeletion) {
+    const { confirm } = await inquirer.prompt([
+      {
+        name: "confirm",
+        message: `Are you sure you want to delete ${appName}?`,
+        type: "confirm",
+      },
+    ]);
+    if (!confirm) {
+      process.exit(0);
+    }
+  }
+
+  // Verify that the provided appName exists.
   const allApps = await getAllApps(credentials);
   const app = allApps?.filter((app) => {
     if (app.name === appName) {
@@ -59,6 +78,7 @@ export async function deleteApp(appName: string, credentials: Credentials) {
     process.exit(1);
   }
 
+  // Delete the app.
   const spinner = ora("Deleting App").start();
   await postRequest(`https://${credentials.domain}/api/folders/deletePage`, {
     pageId: app[0].id,

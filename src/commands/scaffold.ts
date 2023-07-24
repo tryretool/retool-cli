@@ -1,3 +1,5 @@
+const inquirer = require("inquirer");
+
 import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { createTable } from "../utils/table";
 import { CommandModule } from "yargs";
@@ -40,9 +42,22 @@ const handler = async function (argv: any) {
   if (argv.delete) {
     const tableName = argv.delete;
     const workflowName = `${tableName} CRUD Workflow`;
-    await deleteTable(tableName, credentials);
-    await deleteWorkflow(workflowName, credentials);
-    await deleteApp(tableName, credentials);
+
+    // Confirm deletion.
+    const { confirm } = await inquirer.prompt([
+      {
+        name: "confirm",
+        message: `Are you sure you want to delete ${tableName} table, CRUD workflow and app?`,
+        type: "confirm",
+      },
+    ]);
+    if (!confirm) {
+      process.exit(0);
+    }
+
+    await deleteTable(tableName, credentials, false);
+    await deleteWorkflow(workflowName, credentials, false);
+    await deleteApp(tableName, credentials, false);
   }
 
   // Handle `retool scaffold`

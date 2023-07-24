@@ -1,5 +1,6 @@
 const chalk = require("chalk");
 const ora = require("ora");
+const inquirer = require("inquirer");
 
 import { generateWorkflowMetadata } from "./puppeteer";
 import { Credentials, getCredentials } from "./credentials";
@@ -30,8 +31,22 @@ export async function fetchAllWorkflows(
 
 export async function deleteWorkflow(
   workflowName: string,
-  credentials: Credentials
+  credentials: Credentials,
+  confirmDeletion: boolean
 ) {
+  if (confirmDeletion) {
+    const { confirm } = await inquirer.prompt([
+      {
+        name: "confirm",
+        message: `Are you sure you want to delete ${workflowName}?`,
+        type: "confirm",
+      },
+    ]);
+    if (!confirm) {
+      process.exit(0);
+    }
+  }
+
   // Verify that the provided workflowName exists.
   const allWorkflows = await fetchAllWorkflows(credentials);
   const workflow = allWorkflows?.filter((workflow) => {

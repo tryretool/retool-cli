@@ -168,7 +168,7 @@ const handler = async function (argv: any) {
 
   // Handle `retool db --delete <table-name>`
   else if (argv.delete) {
-    await deleteTable(argv.delete, credentials);
+    await deleteTable(argv.delete, credentials, true);
   }
 
   // Handle `retool db --gendata <table-name>`
