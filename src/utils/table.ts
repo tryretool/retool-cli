@@ -7,13 +7,17 @@ import { FieldMapping } from "../commands/db";
 
 const inquirer = require("inquirer");
 
+type Table = {
+  name: string;
+};
+
 // Verify that the table exists in Retool DB, otherwise exit.
 export async function verifyTableExists(
   tableName: string,
   credentials: Credentials
 ) {
   const tables = await fetchAllTables(credentials);
-  if (!tables?.map((table: any) => table.name).includes(tableName)) {
+  if (!tables?.map((table) => table.name).includes(tableName)) {
     console.log(`No table named ${tableName} found in Retool DB. 😓`);
     console.log(`Use \`retool db --list\` to list all tables.`);
     console.log(`Use \`retool db --create\` to create a new table.`);
@@ -22,10 +26,9 @@ export async function verifyTableExists(
 }
 
 // Fetches all existing tables from a Retool DB.
-// TODO: Type tables.
 export async function fetchAllTables(
   credentials: Credentials
-): Promise<any | undefined> {
+): Promise<Array<Table> | undefined> {
   const spinner = ora("Fetching tables from Retool DB").start();
   const fetchDBsResponse = await getRequest(
     `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`
