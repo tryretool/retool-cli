@@ -46,7 +46,7 @@ export async function deleteTable(tableName: string, credentials: Credentials) {
   const { confirm } = await inquirer.prompt([
     {
       name: "confirm",
-      message: `Are you sure you want to delete ${tableName}?`,
+      message: `Are you sure you want to delete the ${tableName} table?`,
       type: "confirm",
     },
   ]);
@@ -67,7 +67,7 @@ export async function deleteTable(tableName: string, credentials: Credentials) {
   );
   spinner.stop();
 
-  console.log(`Deleted ${tableName}. 🗑️`);
+  console.log(`Deleted ${tableName} table. 🗑️`);
 }
 
 export async function createTable(

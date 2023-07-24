@@ -2,7 +2,7 @@ import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { createTable } from "../utils/table";
 import { CommandModule } from "yargs";
 import { generateApp } from "../utils/apps";
-import { generateWorkflow } from "../utils/workflows";
+import { deleteWorkflow, generateWorkflow } from "../utils/workflows";
 import {
   collectColumnNames,
   collectTableName,
@@ -39,7 +39,9 @@ const handler = async function (argv: any) {
   // Handle `retool scaffold -d <db_name>`
   if (argv.delete) {
     const tableName = argv.delete;
+    const workflowName = `${tableName} CRUD Workflow`;
     await deleteTable(tableName, credentials);
+    await deleteWorkflow(workflowName, credentials);
   }
 
   // Handle `retool scaffold`

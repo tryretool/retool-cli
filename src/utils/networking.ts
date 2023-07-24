@@ -35,6 +35,15 @@ export async function getRequest(url: string, exitOnFailure = true) {
   }
 }
 
+export async function deleteRequest(url: string, exitOnFailure = true) {
+  try {
+    const response = await axios.delete(url);
+    return response;
+  } catch (error: any) {
+    handleError(error, exitOnFailure, url);
+  }
+}
+
 function handleError(error: any, exitOnFailure = true, url: string) {
   if (error.response) {
     // The request was made, but the server responded with a status code outside the 2xx range
