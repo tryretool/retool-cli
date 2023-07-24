@@ -1,12 +1,20 @@
 const axios = require("axios");
 const ora = require("ora");
-const fs = require("fs");
 const inquirer = require("inquirer");
 
 import { getRequest } from "./networking";
 import { isDomainValid, isAccessTokenValid, isXsrfValid } from "./validation";
+import { Entry } from "@napi-rs/keyring";
 
-export const CREDENTIALS_PATH = __dirname + "/.retool-cli-credentials";
+const RETOOL_CLI_SERVICE_NAME = "Retool CLI";
+const RETOOL_CLI_ACCOUNT_NAME = "retool-cli-user";
+
+/*
+ * Credential management using keyring-rs. This is a cross-platform library
+ * which uses the OS's native credential manager.
+ * https://github.com/Brooooooklyn/keyring-node
+ * https://github.com/hwchen/keyring-rs
+ */
 
 export type Credentials = {
   domain: string; // The 3 required properties are fetched during login.
@@ -58,40 +66,34 @@ export function askForCookies() {
     });
 }
 
-// Persist credentials to disk at CREDENTIALS_PATH.
 export function persistCredentials(credentials: Credentials) {
-  try {
-    fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(credentials));
-  } catch (err) {
-    console.error("Error saving credentials to disk, exiting: ", err);
-    process.exit(1);
-  }
+  const entry = new Entry(RETOOL_CLI_SERVICE_NAME, RETOOL_CLI_ACCOUNT_NAME);
+  entry.setPassword(JSON.stringify(credentials));
 }
 
-// Get credentials from disk.
 export function getCredentials(): Credentials | undefined {
-  if (!fs.existsSync(CREDENTIALS_PATH)) {
-    return;
+  const entry = new Entry(RETOOL_CLI_SERVICE_NAME, RETOOL_CLI_ACCOUNT_NAME);
+  const password = entry.getPassword();
+  if (password) {
+    return JSON.parse(password);
   }
-  return JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
 }
 
-// Check if credentials exist on disk.
 export function doCredentialsExist(): boolean {
-  return fs.existsSync(CREDENTIALS_PATH);
-}
-
-// Delete credentials from disk if they exist.
-export function deleteCredentials() {
-  if (!fs.existsSync(CREDENTIALS_PATH)) {
-    console.log(`No credentials found! To log in, run: retool login`);
-    return;
+  const entry = new Entry(RETOOL_CLI_SERVICE_NAME, RETOOL_CLI_ACCOUNT_NAME);
+  const password = entry.getPassword();
+  if (password) {
+    return true;
   }
-
-  fs.unlinkSync(CREDENTIALS_PATH);
+  return false;
 }
 
-// Fetch gridId and retoolDBUuid from Retool. Persist to disk.
+export function deleteCredentials() {
+  const entry = new Entry(RETOOL_CLI_SERVICE_NAME, RETOOL_CLI_ACCOUNT_NAME);
+  entry.deletePassword();
+}
+
+// Fetch gridId and retoolDBUuid from Retool. Persist to keychain.
 async function fetchDBCredentials() {
   const credentials = getCredentials();
   if (!credentials) {
