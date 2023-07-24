@@ -7,14 +7,15 @@ import {
   collectTableName,
   deleteTable,
 } from "../utils/table";
+import { createApp, deleteApp } from "../utils/apps";
 
 const command = "scaffold";
 const describe = "Scaffold a Retool DB table, CRUD Workflow, and App.";
 const builder: CommandModule["builder"] = {
   name: {
     alias: "n",
-    describe: `Name of DB to scaffold. Usage:
-    retool scaffold -n <db_name>`,
+    describe: `Name of table to scaffold. Usage:
+    retool scaffold -n <table_name>`,
     type: "string",
     nargs: 1,
   },
@@ -41,6 +42,7 @@ const handler = async function (argv: any) {
     const workflowName = `${tableName} CRUD Workflow`;
     await deleteTable(tableName, credentials);
     await deleteWorkflow(workflowName, credentials);
+    await deleteApp(tableName, credentials);
   }
 
   // Handle `retool scaffold`
@@ -61,8 +63,12 @@ const handler = async function (argv: any) {
     console.log("\n");
     await generateWorkflow(tableName);
     console.log("\n");
-    // await generateApp(tableName);
-    console.log("To generate an app:");
+
+    await createApp(tableName, credentials);
+
+    console.log(
+      "\nTo generate an app to visually perform CRUD on table above:"
+    );
     console.log(`1: Go to https://${credentials.domain}`);
     console.log(`2: Click "Create New" > "From Database"`);
     console.log(`3: Resource is "retool_db", select table "${tableName}"`);

@@ -161,9 +161,9 @@ const handler = async function (argv: any) {
       tables.forEach((table: any) => {
         console.log(table.name);
       });
-      return;
+    } else {
+      console.log("No tables found.");
     }
-    console.log("No tables found.");
   }
 
   // Handle `retool db --delete <table-name>`

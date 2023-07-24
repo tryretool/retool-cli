@@ -1,4 +1,3 @@
-const axios = require("axios");
 const chalk = require("chalk");
 
 import { ConnectionStringParser } from "connection-string-parser";
@@ -37,8 +36,6 @@ async function getConnectionString(): Promise<string | undefined> {
   ) {
     return;
   }
-  axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
-  axios.defaults.headers.cookie = `accessToken=${credentials.accessToken};`;
   const grid = await getRequest(
     `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`,
     false

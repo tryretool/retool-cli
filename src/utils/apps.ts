@@ -1,35 +1,83 @@
 const ora = require("ora");
 
-import { getCredentials } from "./credentials";
-import { postRequest } from "./networking";
+import chalk from "chalk";
+import { Credentials } from "./credentials";
+import { getRequest, postRequest } from "./networking";
 
-// Generates an app based on this template: https://retool.com/templates/postgresql-admin-panel
-export async function generateApp(tableName: string) {
-  const credentials = getCredentials();
-  if (!credentials) {
-    return;
+type App = {
+  uuid: string;
+  name: string;
+  folderId: number;
+  id: string;
+  protected: boolean;
+  updatedAt: string;
+  createdAt: string;
+};
+
+export async function createApp(
+  appName: string,
+  credentials: Credentials
+): Promise<App | undefined> {
+  const spinner = ora("Creating App").start();
+
+  const createAppResult = await postRequest(
+    `https://${credentials.domain}/api/pages/createPage`,
+    {
+      pageName: appName,
+      isGlobalWidget: false,
+      isMobileApp: false,
+      multiScreenMobileApp: false,
+    }
+  );
+  spinner.stop();
+
+  const { page } = createAppResult.data;
+  if (!page?.uuid) {
+    console.log("Error creating app.");
+    console.log(createAppResult.data);
+    process.exit(1);
+  } else {
+    console.log("Successfully created an App. 🎉");
+    console.log(
+      `${chalk.bold("View in browser:")} https://${credentials.domain}/editor/${
+        page.uuid
+      }`
+    );
+    return page;
+  }
+}
+
+export async function deleteApp(appName: string, credentials: Credentials) {
+  const allApps = await getAllApps(credentials);
+  const app = allApps?.filter((app) => {
+    if (app.name === appName) {
+      return app;
+    }
+  });
+  if (app?.length != 1) {
+    console.log(`0 or >1 Apps named ${appName} found. 😓`);
+    process.exit(1);
   }
 
-  const spinner = ora("Creating app").start();
+  const spinner = ora("Deleting App").start();
+  await postRequest(`https://${credentials.domain}/api/folders/deletePage`, {
+    pageId: app[0].id,
+  });
+  spinner.stop();
 
-  const app = await postRequest(
-    `https://${credentials.domain}/api/pages/cloneTemplate`,
-    {
-      templateId: "postgresql-admin-panel",
-      newPageName: `${tableName} CRUD App`,
-    }
+  console.log(`Deleted ${appName} app. 🗑️`);
+}
+
+export async function getAllApps(
+  credentials: Credentials
+): Promise<Array<App> | undefined> {
+  const spinner = ora(`Fetching all apps.`).start();
+
+  const fetchAppsResponse = await getRequest(
+    `https://${credentials.domain}/api/pages?mobileAppsOnly=false`
   );
 
   spinner.stop();
 
-  if (app.data.newPage?.uuid) {
-    console.log("Successfully created app.");
-    console.log(
-      `View it: https://${credentials.domain}/apps/${app.data.newPage.uuid}/`
-    );
-  } else {
-    console.log("Error creating app: ");
-    console.log(app);
-    return;
-  }
+  return fetchAppsResponse?.data?.pages;
 }
