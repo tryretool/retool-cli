@@ -1,7 +1,6 @@
 import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { createTable } from "../utils/table";
 import { CommandModule } from "yargs";
-import { generateApp } from "../utils/apps";
 import { deleteWorkflow, generateWorkflow } from "../utils/workflows";
 import {
   collectColumnNames,
@@ -10,7 +9,7 @@ import {
 } from "../utils/table";
 
 const command = "scaffold";
-const describe = "Scaffold a Retool DB table, Workflow, and App.";
+const describe = "Scaffold a Retool DB table, CRUD Workflow, and App.";
 const builder: CommandModule["builder"] = {
   name: {
     alias: "n",

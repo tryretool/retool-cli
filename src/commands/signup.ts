@@ -7,6 +7,7 @@ import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
 import { persistCredentials, doCredentialsExist } from "../utils/credentials";
 import { isEmailValid } from "../utils/validation";
 import { postRequest, getRequest } from "../utils/networking";
+import { logSuccess } from "./login";
 
 const command = "signup";
 const describe = "Create a Retool account.";
@@ -85,12 +86,17 @@ const handler = async function (argv: any) {
   );
 
   // Step 5: Persist credentials
-  console.log("Successfully created account. 👌🏻");
+  const domain = `${org}.retool.com`;
+  const userRes = await getRequest(`https://${domain}/api/user`);
   persistCredentials({
+    domain,
     accessToken,
     xsrf: xsrfToken,
-    domain: `${org}.retool.com`,
+    firstName: userRes.data.user?.firstName,
+    lastName: userRes.data.user?.lastName,
+    email: userRes.data.user?.email,
   });
+  logSuccess();
 };
 
 async function collectEmail(): Promise<string | undefined> {
@@ -167,7 +173,7 @@ async function collectOrg(): Promise<string | undefined> {
     {
       name: "org",
       message:
-        "What is your organization name? Leave this blank to generate a random name.",
+        "What is your organization name? Leave blank to generate a random name.",
       type: "input",
     },
   ]);

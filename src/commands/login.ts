@@ -189,7 +189,7 @@ async function loginViaBrowser() {
   server.close();
 }
 
-function logSuccess() {
+export function logSuccess() {
   const credentials = getCredentials();
   if (credentials?.firstName && credentials.lastName && credentials.email) {
     console.log(
