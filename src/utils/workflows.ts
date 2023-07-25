@@ -12,6 +12,7 @@ type Workflow = {
   isEnabled: boolean;
   protected: boolean;
   deployedBy: string;
+  lastDeployedAt: string;
 };
 
 export async function getAllWorkflows(

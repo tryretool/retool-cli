@@ -158,7 +158,6 @@ const handler = async function (argv: any) {
   else if (argv.list) {
     const tables = await fetchAllTables(credentials);
     if (tables && tables.length > 0) {
-      console.log("Tables in Retool DB:");
       tables.forEach((table) => {
         console.log(table.name);
       });

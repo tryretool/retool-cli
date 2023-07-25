@@ -1,4 +1,3 @@
-import type { DateTimeFormatOptions } from "intl";
 import { CommandModule } from "yargs";
 
 import {
@@ -8,22 +7,14 @@ import {
   getAllApps,
 } from "../utils/apps";
 import { getAndVerifyFullCredentials } from "../utils/credentials";
-
-// 07/19/2023, 09:07:58 PM
-const dateOptions: DateTimeFormatOptions = {
-  month: "2-digit",
-  day: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-};
+import { dateOptions } from "../utils/date";
 
 const command = "apps";
 const describe = "Interface with Retool Apps.";
 const builder: CommandModule["builder"] = {
   list: {
     alias: "l",
-    describe: "List all Retool Apps.",
+    describe: "List all Retool Apps and their last updated date.",
   },
   create: {
     alias: "c",

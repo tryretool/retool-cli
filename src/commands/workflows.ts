@@ -1,6 +1,7 @@
 import { CommandModule } from "yargs";
 
 import { getAndVerifyFullCredentials } from "../utils/credentials";
+import { dateOptions } from "../utils/date";
 import { deleteWorkflow, getAllWorkflows } from "../utils/workflows";
 
 const command = "workflows";
@@ -8,7 +9,8 @@ const describe = "Interface with Retool Workflows.";
 const builder: CommandModule["builder"] = {
   list: {
     alias: "l",
-    describe: "List all Retool Workflows.",
+    describe:
+      "List all Retool Workflows, their last deployed date, and their enabled status.",
   },
   delete: {
     alias: "d",
@@ -24,10 +26,18 @@ const handler = async function (argv: any) {
   // Handle `retool workflows -l`
   if (argv.list) {
     const workflows = await getAllWorkflows(credentials);
+    // Sort from oldest to newest.
+    workflows?.sort((a, b) => {
+      return Date.parse(a.lastDeployedAt) - Date.parse(b.lastDeployedAt);
+    });
     if (workflows && workflows.length > 0) {
-      console.log("Retool Workflows:");
       workflows.forEach((wf) => {
-        console.log(wf.name);
+        const date = new Date(Date.parse(wf.lastDeployedAt));
+        console.log(
+          `${date.toLocaleString(undefined, dateOptions)}     ${
+            wf.isEnabled ? "🟢" : "🔴"
+          }     ${wf.name}`
+        );
       });
     } else {
       console.log("No workflows found.");
