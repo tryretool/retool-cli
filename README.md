@@ -10,11 +10,13 @@ Open an issue in this repository for feature requests. PRs welcome!
 
 1. `npm install -g retool-cli`
 
-See [this guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) to resolve EACCES permissions errors.
+Node.js is a requirement, it can be installed [here](https://nodejs.org/en/download). See [this guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) to resolve EACCES permissions errors.
 
 ## Usage Instructions
 
 `retool --help`
+
+`retool <command> --help`
 
 ## Building from Source
 
