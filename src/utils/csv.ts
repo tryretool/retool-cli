@@ -19,18 +19,20 @@ export async function parseCSV(csvFile: string): Promise<ParseResult> {
     fs.createReadStream(csvFile)
       .pipe(
         csvParser({
-          skipEmptyLines: true,
+          skipEmptyLines: true, // Doesn't seem to work
         })
       )
       .on("error", (error: Error) => {
         resolve({ success: false, error: error.message });
       })
       .on("data", (row: any) => {
-        if (firstRow) {
-          headers = Object.keys(row);
-          firstRow = false;
+        if (Object.keys(row).length > 0) {
+          if (firstRow) {
+            headers = Object.keys(row);
+            firstRow = false;
+          }
+          rows.push(Object.values(row));
         }
-        rows.push(Object.values(row));
       })
       .on("end", () => {
         resolve({ success: true, headers, rows });
