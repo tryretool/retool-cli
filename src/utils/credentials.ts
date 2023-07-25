@@ -1,10 +1,11 @@
-const axios = require("axios");
-const ora = require("ora");
-const inquirer = require("inquirer");
+import { Entry } from "@napi-rs/keyring";
 
 import { getRequest } from "./networking";
-import { isDomainValid, isAccessTokenValid, isXsrfValid } from "./validation";
-import { Entry } from "@napi-rs/keyring";
+import { isAccessTokenValid, isDomainValid, isXsrfValid } from "./validation";
+
+const axios = require("axios");
+const inquirer = require("inquirer");
+const ora = require("ora");
 
 const RETOOL_CLI_SERVICE_NAME = "Retool CLI";
 const RETOOL_CLI_ACCOUNT_NAME = "retool-cli-user";

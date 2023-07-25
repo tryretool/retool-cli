@@ -1,8 +1,9 @@
+import chalk from "chalk";
 import ora from "ora";
+
+import { logConnectionStringDetails } from "./connectionString";
 import { Credentials } from "./credentials";
 import { getRequest, postRequest } from "./networking";
-import chalk from "chalk";
-import { logConnectionStringDetails } from "./connectionString";
 import { FieldMapping } from "../commands/db";
 
 const inquirer = require("inquirer");

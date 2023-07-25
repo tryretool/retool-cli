@@ -1,8 +1,9 @@
-const chalk = require("chalk");
-
 import { ConnectionStringParser } from "connection-string-parser";
+
 import { getCredentials } from "./credentials";
 import { getRequest } from "./networking";
+
+const chalk = require("chalk");
 
 // Print a psql command to connect to the Retool DB.
 // Connnection string is never persisted, it's fetched when needed.

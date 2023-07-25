@@ -1,9 +1,10 @@
-const ora = require("ora");
-const inquirer = require("inquirer");
-
 import chalk from "chalk";
+
 import { Credentials } from "./credentials";
 import { getRequest, postRequest } from "./networking";
+
+const inquirer = require("inquirer");
+const ora = require("ora");
 
 type App = {
   uuid: string;

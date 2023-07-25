@@ -1,5 +1,6 @@
-import util from "util";
 import { exec as _exec } from "child_process";
+import util from "util";
+
 import ora from "ora";
 import { CommandModule } from "yargs";
 

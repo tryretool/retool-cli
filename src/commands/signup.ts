@@ -1,13 +1,14 @@
+import { CommandModule } from "yargs";
+
+import { logSuccess } from "./login";
+import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
+import { doCredentialsExist, persistCredentials } from "../utils/credentials";
+import { getRequest, postRequest } from "../utils/networking";
+import { isEmailValid } from "../utils/validation";
+
 const axios = require("axios");
 const inquirer = require("inquirer");
 const ora = require("ora");
-
-import { CommandModule } from "yargs";
-import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
-import { persistCredentials, doCredentialsExist } from "../utils/credentials";
-import { isEmailValid } from "../utils/validation";
-import { postRequest, getRequest } from "../utils/networking";
-import { logSuccess } from "./login";
 
 const command = "signup";
 const describe = "Create a Retool account.";

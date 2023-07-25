@@ -1,10 +1,10 @@
-const puppeteer = require("puppeteer");
-
-import { getCredentials } from "../utils/credentials";
 import {
-  workflowTemplate,
   WorkflowTemplateType,
+  workflowTemplate,
 } from "../resources/workflowTemplate";
+import { getCredentials } from "../utils/credentials";
+
+const puppeteer = require("puppeteer");
 
 declare global {
   interface Window {

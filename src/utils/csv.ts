@@ -1,5 +1,6 @@
-const csvParser = require("csv-parser");
 const fs = require("fs");
+
+const csvParser = require("csv-parser");
 
 export type ParseResult =
   | {

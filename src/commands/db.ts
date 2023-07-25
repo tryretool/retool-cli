@@ -1,14 +1,8 @@
-const chalk = require("chalk");
-const { faker } = require("@faker-js/faker/locale/en");
-const fs = require("fs");
-const inquirer = require("inquirer");
-const path = require("path");
-const ora = require("ora");
-
-import { parseCSV } from "../utils/csv";
-import { getAndVerifyFullCredentials } from "../utils/credentials";
-import { getRequest, postRequest } from "../utils/networking";
 import { CommandModule } from "yargs";
+
+import { getAndVerifyFullCredentials } from "../utils/credentials";
+import { parseCSV } from "../utils/csv";
+import { getRequest, postRequest } from "../utils/networking";
 import {
   collectColumnNames,
   collectTableName,
@@ -17,6 +11,14 @@ import {
   fetchAllTables,
   verifyTableExists,
 } from "../utils/table";
+
+const fs = require("fs");
+const path = require("path");
+
+const { faker } = require("@faker-js/faker/locale/en");
+const chalk = require("chalk");
+const inquirer = require("inquirer");
+const ora = require("ora");
 
 export type FieldMapping = Array<{
   csvField: string;

@@ -1,7 +1,8 @@
-const chalk = require("chalk");
+import { ArgumentsCamelCase, CommandModule } from "yargs";
 
-import { CommandModule, ArgumentsCamelCase } from "yargs";
 import { getCredentials } from "../utils/credentials";
+
+const chalk = require("chalk");
 
 const command = "whoami";
 const describe = "Show the current Retool user.";

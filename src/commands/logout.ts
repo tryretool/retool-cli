@@ -1,4 +1,5 @@
 import { CommandModule } from "yargs";
+
 import { deleteCredentials } from "../utils/credentials";
 
 const command = "logout";

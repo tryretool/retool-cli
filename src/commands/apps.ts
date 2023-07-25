@@ -1,11 +1,12 @@
 import { CommandModule } from "yargs";
-import { getAndVerifyFullCredentials } from "../utils/credentials";
+
 import {
   collectAppName,
   createApp,
   deleteApp,
   getAllApps,
 } from "../utils/apps";
+import { getAndVerifyFullCredentials } from "../utils/credentials";
 
 const command = "apps";
 const describe = "Interface with Retool Apps.";

@@ -1,10 +1,10 @@
-const chalk = require("chalk");
-const ora = require("ora");
-const inquirer = require("inquirer");
-
-import { generateWorkflowMetadata } from "./puppeteer";
 import { Credentials } from "./credentials";
 import { deleteRequest, getRequest, postRequest } from "./networking";
+import { generateWorkflowMetadata } from "./puppeteer";
+
+const chalk = require("chalk");
+const inquirer = require("inquirer");
+const ora = require("ora");
 
 type Workflow = {
   id: string; //UUID

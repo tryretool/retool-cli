@@ -1,19 +1,21 @@
-const axios = require("axios");
-const chalk = require("chalk");
-const open = require("open");
-const path = require("path");
-const inquirer = require("inquirer");
-
 import express from "express";
+import { CommandModule } from "yargs";
+
+import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
 import {
+  askForCookies,
+  doCredentialsExist,
   getCredentials,
   persistCredentials,
-  doCredentialsExist,
-  askForCookies,
 } from "../utils/credentials";
-import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
-import { postRequest, getRequest } from "../utils/networking";
-import { CommandModule } from "yargs";
+import { getRequest, postRequest } from "../utils/networking";
+
+const path = require("path");
+
+const axios = require("axios");
+const chalk = require("chalk");
+const inquirer = require("inquirer");
+const open = require("open");
 
 const command = "login";
 const describe = "Log in to Retool.";

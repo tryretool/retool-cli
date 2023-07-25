@@ -1,15 +1,16 @@
-const inquirer = require("inquirer");
-
-import { getAndVerifyFullCredentials } from "../utils/credentials";
-import { createTable } from "../utils/table";
 import { CommandModule } from "yargs";
-import { deleteWorkflow, generateCRUDWorkflow } from "../utils/workflows";
+
+import { createApp, deleteApp } from "../utils/apps";
+import { getAndVerifyFullCredentials } from "../utils/credentials";
 import {
   collectColumnNames,
   collectTableName,
+  createTable,
   deleteTable,
 } from "../utils/table";
-import { createApp, deleteApp } from "../utils/apps";
+import { deleteWorkflow, generateCRUDWorkflow } from "../utils/workflows";
+
+const inquirer = require("inquirer");
 
 const command = "scaffold";
 const describe = "Scaffold a Retool DB table, CRUD Workflow, and App.";
