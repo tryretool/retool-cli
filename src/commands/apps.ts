@@ -1,6 +1,11 @@
 import { CommandModule } from "yargs";
 import { getAndVerifyFullCredentials } from "../utils/credentials";
-import { deleteApp, getAllApps } from "../utils/apps";
+import {
+  collectAppName,
+  createApp,
+  deleteApp,
+  getAllApps,
+} from "../utils/apps";
 
 const command = "apps";
 const describe = "Interface with Retool Apps.";
@@ -8,6 +13,10 @@ const builder: CommandModule["builder"] = {
   list: {
     alias: "l",
     describe: "List all Retool Apps.",
+  },
+  create: {
+    alias: "c",
+    describe: `Create a new app.`,
   },
   delete: {
     alias: "d",
@@ -31,6 +40,12 @@ const handler = async function (argv: any) {
     } else {
       console.log("No apps found.");
     }
+  }
+
+  // Handle `retool apps --create`
+  else if (argv.create) {
+    const appName = await collectAppName();
+    await createApp(appName, credentials);
   }
 
   // Handle `retool apps -d <app-name>`

@@ -101,3 +101,21 @@ export async function getAllApps(
 
   return fetchAppsResponse?.data?.pages;
 }
+
+export async function collectAppName(): Promise<string> {
+  const { appName } = await inquirer.prompt([
+    {
+      name: "appName",
+      message: "App name?",
+      type: "input",
+    },
+  ]);
+
+  if (appName.length === 0) {
+    console.log("Error: App name cannot be blank.");
+    process.exit(1);
+  }
+
+  // Remove spaces from app name.
+  return appName.replace(/\s/g, "_");
+}

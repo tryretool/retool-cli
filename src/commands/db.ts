@@ -74,8 +74,7 @@ const builder: CommandModule["builder"] = {
   },
   create: {
     alias: "c",
-    describe: `Create a new table interactively`,
-    type: "array",
+    describe: `Create a new table.`,
   },
   upload: {
     alias: "u",
@@ -106,7 +105,7 @@ const builder: CommandModule["builder"] = {
 const handler = async function (argv: any) {
   const credentials = await getAndVerifyFullCredentials();
 
-  // Handle `retool db --new <path-to-csv>`
+  // Handle `retool db --upload <path-to-csv>`
   if (argv.upload) {
     // Verify file exists, is a csv, and is < 15MB.
     if (
@@ -146,7 +145,7 @@ const handler = async function (argv: any) {
     await createTable(tableName, headers, rows, credentials, true);
   }
 
-  // Handle `retool db --create <column-name> <column-name> ...`
+  // Handle `retool db --create`
   else if (argv.create) {
     const tableName = await collectTableName();
     const colNames = await collectColumnNames();

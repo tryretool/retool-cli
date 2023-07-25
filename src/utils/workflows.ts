@@ -3,7 +3,7 @@ const ora = require("ora");
 const inquirer = require("inquirer");
 
 import { generateWorkflowMetadata } from "./puppeteer";
-import { Credentials, getCredentials } from "./credentials";
+import { Credentials } from "./credentials";
 import { deleteRequest, getRequest, postRequest } from "./networking";
 
 type Workflow = {
@@ -68,13 +68,11 @@ export async function deleteWorkflow(
   console.log(`Deleted ${workflowName}. 🗑️`);
 }
 
-// Generates a CRUD workflow from a template.
-export async function generateWorkflow(tableName: string) {
-  const credentials = getCredentials();
-  if (!credentials) {
-    return;
-  }
-
+// Generates a CRUD workflow for tableName from a template.
+export async function generateCRUDWorkflow(
+  tableName: string,
+  credentials: Credentials
+) {
   let spinner = ora("Creating workflow").start();
 
   // Generate workflow metadata via puppeteer.

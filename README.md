@@ -6,7 +6,7 @@ Open an issue in this repository for feature requests. PRs welcome!
 
 ![Screenshot of the retool help command](https://i.imgur.com/OJhsHiv.png)
 
-## Installation
+## Installation & Updating
 
 1. `npm install -g retool-cli`
 

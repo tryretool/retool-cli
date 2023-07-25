@@ -3,7 +3,7 @@ const inquirer = require("inquirer");
 import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { createTable } from "../utils/table";
 import { CommandModule } from "yargs";
-import { deleteWorkflow, generateWorkflow } from "../utils/workflows";
+import { deleteWorkflow, generateCRUDWorkflow } from "../utils/workflows";
 import {
   collectColumnNames,
   collectTableName,
@@ -76,7 +76,7 @@ const handler = async function (argv: any) {
       `Generate mock data with: \`retool db --gendata ${tableName}\``
     );
     console.log("\n");
-    await generateWorkflow(tableName);
+    await generateCRUDWorkflow(tableName, credentials);
     console.log("\n");
 
     await createApp(tableName, credentials);
