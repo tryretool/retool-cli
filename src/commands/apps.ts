@@ -1,3 +1,4 @@
+import type { DateTimeFormatOptions } from "intl";
 import { CommandModule } from "yargs";
 
 import {
@@ -7,6 +8,15 @@ import {
   getAllApps,
 } from "../utils/apps";
 import { getAndVerifyFullCredentials } from "../utils/credentials";
+
+// 07/19/2023, 09:07:58 PM
+const dateOptions: DateTimeFormatOptions = {
+  month: "2-digit",
+  day: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+};
 
 const command = "apps";
 const describe = "Interface with Retool Apps.";
@@ -33,10 +43,16 @@ const handler = async function (argv: any) {
   // Handle `retool apps -l`
   if (argv.list) {
     const apps = await getAllApps(credentials);
+    // Sort from oldest to newest.
+    apps?.sort((a, b) => {
+      return Date.parse(a.updatedAt) - Date.parse(b.updatedAt);
+    });
     if (apps && apps.length > 0) {
-      console.log("Retool Apps:");
       apps.forEach((app) => {
-        console.log(app.name);
+        const date = new Date(Date.parse(app.updatedAt));
+        console.log(
+          `${date.toLocaleString(undefined, dateOptions)}     ${app.name}`
+        );
       });
     } else {
       console.log("No apps found.");
