@@ -2,6 +2,7 @@ import { CommandModule } from "yargs";
 
 import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { parseCSV } from "../utils/csv";
+import { generateData } from "../utils/faker";
 import { getRequest, postRequest } from "../utils/networking";
 import {
   collectColumnNames,
@@ -15,7 +16,6 @@ import {
 const fs = require("fs");
 const path = require("path");
 
-const { faker } = require("@faker-js/faker/locale/en");
 const chalk = require("chalk");
 const inquirer = require("inquirer");
 const ora = require("ora");
@@ -49,7 +49,7 @@ type RetoolDBTableInfo = {
 };
 
 // A "field" is a single Retool DB column.
-type RetoolDBField = {
+export type RetoolDBField = {
   name: string;
   type: any; //GridFieldType
   columnDefault:
@@ -100,7 +100,7 @@ const builder: CommandModule["builder"] = {
     nargs: 1,
   },
   gpt: {
-    describe: `A modifier for the gendata command that uses GPT to generate data. Usage:
+    describe: `A modifier for gendata that uses GPT. Requires OpenAI to be configured in Retool. Usage:
     retool db --gendata <table-name> --gpt`,
   },
 };
@@ -365,60 +365,6 @@ function parseDBData(data: string): string[][] {
     console.log("Error parsing table data.");
     console.log(e);
     process.exit(1);
-  }
-}
-
-function generateData(
-  fields: Array<RetoolDBField>,
-  rowCount: number,
-  primaryKeyColumnName: string,
-  primaryKeyMaxVal: number
-): {
-  data: string[][]; // rows
-  fields: string[]; // column names
-} {
-  const column_names = fields.map((field) => field.name);
-  const rows: string[][] = [];
-  // Init rows
-  for (let j = 0; j < rowCount; j++) {
-    rows.push([]);
-  }
-
-  for (let i = 0; i < fields.length; i++) {
-    for (let j = 0; j < rowCount; j++) {
-      // Handle primary key column.
-      if (fields[i].name === primaryKeyColumnName) {
-        rows[j].push((primaryKeyMaxVal + j + 1).toString());
-      } else {
-        rows[j].push(generateDataForColumn(fields[i]));
-      }
-    }
-  }
-
-  return {
-    data: rows,
-    fields: column_names,
-  };
-}
-
-function generateDataForColumn(field: RetoolDBField): string {
-  switch (field.generatedColumnType) {
-    case "name":
-      return faker.person.fullName();
-    case "address":
-      return faker.location.streetAddress();
-    case "phone":
-      return faker.phone.number();
-    case "email":
-      return faker.internet.email();
-    case "date":
-      return faker.date.recent();
-    case "lorem":
-      return faker.lorem.sentence(5);
-    case "randomNumber":
-      return faker.number.int(1000);
-    default:
-      return "";
   }
 }
 
