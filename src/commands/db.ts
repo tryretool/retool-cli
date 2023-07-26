@@ -2,7 +2,7 @@ import { CommandModule } from "yargs";
 
 import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { parseCSV } from "../utils/csv";
-import { generateData } from "../utils/faker";
+import { generateData, promptForDataType } from "../utils/faker";
 import { getRequest, postRequest } from "../utils/networking";
 import {
   collectColumnNames,
@@ -26,15 +26,6 @@ export type FieldMapping = Array<{
   ignored: boolean;
   dbType?: string;
 }>;
-
-type GeneratedColumnType =
-  | "name"
-  | "address"
-  | "phone"
-  | "email"
-  | "date"
-  | "lorem"
-  | "randomNumber";
 
 type DBInfoPayload = {
   success: true;
@@ -64,7 +55,7 @@ export type RetoolDBField = {
         kind: "ExpressionDefault";
         value: string;
       };
-  generatedColumnType: GeneratedColumnType | undefined;
+  generatedColumnType: string | undefined;
 };
 
 const command = "db";
@@ -290,24 +281,7 @@ const handler = async function (argv: any) {
         if (fields[i].name === retoolDBInfo.tableInfo.primaryKeyColumn)
           continue;
 
-        const { generatedType } = await inquirer.prompt([
-          {
-            name: "generatedType",
-            message: `What type of data to generate for ${fields[i].name}?`,
-            type: "list",
-            choices: [
-              "Name",
-              "Address",
-              "Phone Number",
-              "Email",
-              "Date",
-              "Lorem Ipsum",
-              "Random Number",
-            ],
-          },
-        ]);
-        fields[i].generatedColumnType =
-          coerceToGeneratedColumnType(generatedType);
+        fields[i].generatedColumnType = await promptForDataType(fields[i].name);
       }
 
       // Generate mock data.
@@ -365,27 +339,6 @@ function parseDBData(data: string): string[][] {
     console.log("Error parsing table data.");
     console.log(e);
     process.exit(1);
-  }
-}
-
-function coerceToGeneratedColumnType(input: string): GeneratedColumnType {
-  switch (input) {
-    case "Name":
-      return "name";
-    case "Address":
-      return "address";
-    case "Phone Number":
-      return "phone";
-    case "Email":
-      return "email";
-    case "Date":
-      return "date";
-    case "Lorem Ipsum":
-      return "lorem";
-    case "Random Number":
-      return "randomNumber";
-    default:
-      return "name";
   }
 }
 
