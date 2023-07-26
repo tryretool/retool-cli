@@ -4,6 +4,9 @@ import {
 } from "../resources/workflowTemplate";
 import { getCredentials } from "../utils/credentials";
 
+/*
+ * CAUTION: Puppeteer import takes ~90ms. Prefer to dynamically import this file.
+ */
 const puppeteer = require("puppeteer");
 
 declare global {
@@ -13,7 +16,7 @@ declare global {
 }
 
 // https://stackoverflow.com/a/61304202
-export const waitTillHTMLRendered = async (page: any, timeout = 30000) => {
+const waitTillHTMLRendered = async (page: any, timeout = 30000) => {
   const checkDurationMsecs = 1000;
   const maxChecks = timeout / checkDurationMsecs;
   let lastHTMLSize = 0;

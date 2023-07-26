@@ -285,7 +285,7 @@ const handler = async function (argv: any) {
       }
 
       // Generate mock data.
-      generatedData = generateData(
+      generatedData = await generateData(
         fields,
         rowCount,
         retoolDBInfo.tableInfo.primaryKeyColumn,

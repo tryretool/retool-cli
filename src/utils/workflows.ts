@@ -1,6 +1,5 @@
 import { Credentials } from "./credentials";
 import { deleteRequest, getRequest, postRequest } from "./networking";
-import { generateWorkflowMetadata } from "./puppeteer";
 
 const chalk = require("chalk");
 const inquirer = require("inquirer");
@@ -77,7 +76,12 @@ export async function generateCRUDWorkflow(
   let spinner = ora("Creating workflow").start();
 
   // Generate workflow metadata via puppeteer.
-  const workflowMeta = await generateWorkflowMetadata(tableName);
+  // Dynamic import b/c puppeteer is slow.
+  const workflowMeta = await import("./puppeteer").then(
+    async ({ generateWorkflowMetadata }) => {
+      return await generateWorkflowMetadata(tableName);
+    }
+  );
   const payload = {
     name: workflowMeta.name,
     crontab: workflowMeta.crontab,
