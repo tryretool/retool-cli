@@ -4,21 +4,23 @@ import {
   collectAppName,
   createApp,
   deleteApp,
-  getAllApps,
+  getAppsAndFolders,
 } from "../utils/apps";
+import type { App } from "../utils/apps";
 import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { dateOptions } from "../utils/date";
 
 const command = "apps";
 const describe = "Interface with Retool Apps.";
 const builder: CommandModule["builder"] = {
-  list: {
-    alias: "l",
-    describe: "List all Retool Apps and their last updated date.",
-  },
   create: {
     alias: "c",
     describe: `Create a new app.`,
+  },
+  list: {
+    alias: "l",
+    describe: `List apps and folders sorted by update time. Optionally provide a folder name to list all apps in that folder. Usage:
+      retool apps -l [folder-name]`,
   },
   delete: {
     alias: "d",
@@ -31,22 +33,59 @@ const builder: CommandModule["builder"] = {
 const handler = async function (argv: any) {
   const credentials = await getAndVerifyFullCredentials();
 
-  // Handle `retool apps -l`
+  // Handle `retool apps --list [folder-name]`
   if (argv.list) {
-    const apps = await getAllApps(credentials);
-    // Sort from oldest to newest.
-    apps?.sort((a, b) => {
-      return Date.parse(a.updatedAt) - Date.parse(b.updatedAt);
-    });
-    if (apps && apps.length > 0) {
-      apps.forEach((app) => {
-        const date = new Date(Date.parse(app.updatedAt));
-        console.log(
-          `${date.toLocaleString(undefined, dateOptions)}     ${app.name}`
-        );
+    let { apps, folders } = await getAppsAndFolders(credentials);
+    const rootFolderId = folders?.find(
+      (folder) => folder.name === "root" && folder.systemFolder === true
+    )?.id;
+
+    // Only list apps in the specified folder.
+    if (typeof argv.list === "string") {
+      const folderId = folders?.find((folder) => folder.name === argv.list)?.id;
+      if (folderId) {
+        const appsInFolder = apps?.filter((app) => app.folderId === folderId);
+        if (appsInFolder && appsInFolder.length > 0) {
+          printApps(appsInFolder);
+        } else {
+          console.log(`No apps found in ${argv.list}.`);
+        }
+      } else {
+        console.log(`No folder named ${argv.list} found.`);
+      }
+    }
+
+    // List all folders, then all apps in root folder.
+    else {
+      // Filter out undesired folders/apps.
+      folders = folders?.filter((folder) => folder.systemFolder === false);
+      apps = apps?.filter((app) => app.folderId === rootFolderId);
+
+      // Sort from oldest to newest.
+      folders?.sort((a, b) => {
+        return Date.parse(a.updatedAt) - Date.parse(b.updatedAt);
       });
-    } else {
-      console.log("No apps found.");
+      apps?.sort((a, b) => {
+        return Date.parse(a.updatedAt) - Date.parse(b.updatedAt);
+      });
+
+      if ((!folders || folders.length === 0) && (!apps || apps.length === 0)) {
+        console.log("No folders or apps found.");
+      } else {
+        // List all folders
+        if (folders && folders?.length > 0) {
+          folders.forEach((folder) => {
+            const date = new Date(Date.parse(folder.updatedAt));
+            console.log(
+              `${date.toLocaleString(undefined, dateOptions)}     📂     ${
+                folder.name
+              }/`
+            );
+          });
+        }
+        // List all apps in root folder.
+        printApps(apps);
+      }
     }
   }
 
@@ -68,6 +107,19 @@ const handler = async function (argv: any) {
     );
   }
 };
+
+function printApps(apps: Array<App> | undefined): void {
+  if (apps && apps?.length > 0) {
+    apps.forEach((app) => {
+      const date = new Date(Date.parse(app.updatedAt));
+      console.log(
+        `${date.toLocaleString(undefined, dateOptions)}     ${
+          app.isGlobalWidget ? "🔧" : "💻"
+        }     ${app.name}`
+      );
+    });
+  }
+}
 
 const commandModule: CommandModule = {
   command,

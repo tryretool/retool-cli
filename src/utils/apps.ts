@@ -6,7 +6,7 @@ import { getRequest, postRequest } from "./networking";
 const inquirer = require("inquirer");
 const ora = require("ora");
 
-type App = {
+export type App = {
   uuid: string;
   name: string;
   folderId: number;
@@ -14,6 +14,18 @@ type App = {
   protected: boolean;
   updatedAt: string;
   createdAt: string;
+  isGlobalWidget: boolean; // is a module
+};
+
+type Folder = {
+  id: number;
+  parentFolderId: number;
+  name: string;
+  systemFolder: boolean;
+  createdAt: string;
+  updatedAt: string;
+  folderType: string;
+  accessLevel: string;
 };
 
 export async function createApp(
@@ -68,8 +80,8 @@ export async function deleteApp(
   }
 
   // Verify that the provided appName exists.
-  const allApps = await getAllApps(credentials);
-  const app = allApps?.filter((app) => {
+  const { apps } = await getAppsAndFolders(credentials);
+  const app = apps?.filter((app) => {
     if (app.name === appName) {
       return app;
     }
@@ -89,9 +101,9 @@ export async function deleteApp(
   console.log(`Deleted ${appName} app. 🗑️`);
 }
 
-export async function getAllApps(
+export async function getAppsAndFolders(
   credentials: Credentials
-): Promise<Array<App> | undefined> {
+): Promise<{ apps?: Array<App>; folders?: Array<Folder> }> {
   const spinner = ora(`Fetching all apps.`).start();
 
   const fetchAppsResponse = await getRequest(
@@ -100,7 +112,10 @@ export async function getAllApps(
 
   spinner.stop();
 
-  return fetchAppsResponse?.data?.pages;
+  return {
+    apps: fetchAppsResponse?.data?.pages,
+    folders: fetchAppsResponse?.data?.folders,
+  };
 }
 
 export async function collectAppName(): Promise<string> {
