@@ -5,27 +5,40 @@ const chalk = require("chalk");
 const inquirer = require("inquirer");
 const ora = require("ora");
 
-type Workflow = {
+export type Workflow = {
   id: string; //UUID
   name: string;
+  folderId: number;
   isEnabled: boolean;
   protected: boolean;
   deployedBy: string;
   lastDeployedAt: string;
 };
 
-export async function getAllWorkflows(
+type WorkflowFolder = {
+  id: number;
+  name: string;
+  systemFolder: boolean;
+  parentFolderId: number;
+  createdAt: string;
+  updatedAt: string;
+  folderType: string;
+  accessLevel: string;
+};
+
+export async function getWorkflowsAndFolders(
   credentials: Credentials
-): Promise<Array<Workflow> | undefined> {
+): Promise<{ workflows?: Array<Workflow>; folders?: Array<WorkflowFolder> }> {
   const spinner = ora("Fetching Workflows").start();
   const fetchWorkflowsResponse = await getRequest(
     `https://${credentials.domain}/api/workflow`
   );
   spinner.stop();
 
-  if (fetchWorkflowsResponse.data) {
-    return fetchWorkflowsResponse.data.workflowsMetadata;
-  }
+  return {
+    workflows: fetchWorkflowsResponse?.data?.workflowsMetadata,
+    folders: fetchWorkflowsResponse?.data?.workflowFolders,
+  };
 }
 
 export async function deleteWorkflow(
@@ -47,8 +60,8 @@ export async function deleteWorkflow(
   }
 
   // Verify that the provided workflowName exists.
-  const allWorkflows = await getAllWorkflows(credentials);
-  const workflow = allWorkflows?.filter((workflow) => {
+  const { workflows } = await getWorkflowsAndFolders(credentials);
+  const workflow = workflows?.filter((workflow) => {
     if (workflow.name === workflowName) {
       return workflow;
     }

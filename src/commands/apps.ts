@@ -19,7 +19,7 @@ const builder: CommandModule["builder"] = {
   },
   list: {
     alias: "l",
-    describe: `List apps and folders sorted by update time. Optionally provide a folder name to list all apps in that folder. Usage:
+    describe: `List folders and apps. Optionally provide a folder name to list all apps in that folder. Usage:
       retool apps -l [folder-name]`,
   },
   delete: {
