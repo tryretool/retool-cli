@@ -19,8 +19,12 @@ const builder: CommandModule["builder"] = {
   },
   list: {
     alias: "l",
-    describe: `List folders and apps. Optionally provide a folder name to list all apps in that folder. Usage:
+    describe: `List folders and apps at root level. Optionally provide a folder name to list all apps in that folder. Usage:
       retool apps -l [folder-name]`,
+  },
+  "list-recursive": {
+    alias: "r",
+    describe: `List all apps and folders.`,
   },
   delete: {
     alias: "d",
@@ -34,10 +38,13 @@ const handler = async function (argv: any) {
   const credentials = await getAndVerifyFullCredentials();
 
   // Handle `retool apps --list [folder-name]`
-  if (argv.list) {
+  if (argv.list || argv.r) {
     let { apps, folders } = await getAppsAndFolders(credentials);
     const rootFolderId = folders?.find(
       (folder) => folder.name === "root" && folder.systemFolder === true
+    )?.id;
+    const trashFolderId = folders?.find(
+      (folder) => folder.name === "archive" && folder.systemFolder === true
     )?.id;
 
     // Only list apps in the specified folder.
@@ -59,7 +66,10 @@ const handler = async function (argv: any) {
     else {
       // Filter out undesired folders/apps.
       folders = folders?.filter((folder) => folder.systemFolder === false);
-      apps = apps?.filter((app) => app.folderId === rootFolderId);
+      apps = apps?.filter((app) => app.folderId !== trashFolderId);
+      if (!argv.r) {
+        apps = apps?.filter((app) => app.folderId === rootFolderId);
+      }
 
       // Sort from oldest to newest.
       folders?.sort((a, b) => {

@@ -13,8 +13,12 @@ const describe = "Interface with Retool Workflows.";
 const builder: CommandModule["builder"] = {
   list: {
     alias: "l",
-    describe: `List folders and workflows. Optionally provide a folder name to list all workflows in that folder. Usage:
+    describe: `List folders and workflows at root level. Optionally provide a folder name to list all workflows in that folder. Usage:
     retool workflows -l [folder-name]`,
+  },
+  "list-recursive": {
+    alias: "r",
+    describe: `List all apps and workflows.`,
   },
   delete: {
     alias: "d",
@@ -28,10 +32,13 @@ const handler = async function (argv: any) {
   const credentials = await getAndVerifyFullCredentials();
 
   // Handle `retool workflows -l`
-  if (argv.list) {
+  if (argv.list || argv.r) {
     let { workflows, folders } = await getWorkflowsAndFolders(credentials);
     const rootFolderId = folders?.find(
       (folder) => folder.name === "root" && folder.systemFolder === true
+    )?.id;
+    const trashFolderId = folders?.find(
+      (folder) => folder.name === "archive" && folder.systemFolder === true
     )?.id;
 
     // Only list workflows in the specified folder.
@@ -55,7 +62,10 @@ const handler = async function (argv: any) {
     else {
       // Filter out undesired folders/workflows.
       folders = folders?.filter((f) => f.systemFolder === false);
-      workflows = workflows?.filter((w) => w.folderId === rootFolderId);
+      workflows = workflows?.filter((w) => w.folderId !== trashFolderId);
+      if (!argv.r) {
+        workflows = workflows?.filter((w) => w.folderId === rootFolderId);
+      }
 
       // Sort from oldest to newest.
       folders?.sort((a, b) => {
