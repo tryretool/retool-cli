@@ -31,7 +31,7 @@ export async function getWorkflowsAndFolders(
 ): Promise<{ workflows?: Array<Workflow>; folders?: Array<WorkflowFolder> }> {
   const spinner = ora("Fetching Workflows").start();
   const fetchWorkflowsResponse = await getRequest(
-    `https://${credentials.domain}/api/workflow`
+    `${credentials.origin}/api/workflow`
   );
   spinner.stop();
 
@@ -73,9 +73,7 @@ export async function deleteWorkflow(
 
   // Delete the Workflow.
   const spinner = ora(`Deleting ${workflowName}`).start();
-  await deleteRequest(
-    `https://${credentials.domain}/api/workflow/${workflow[0].id}`
-  );
+  await deleteRequest(`${credentials.origin}/api/workflow/${workflow[0].id}`);
   spinner.stop();
 
   console.log(`Deleted ${workflowName}. 🗑️`);
@@ -106,19 +104,16 @@ export async function generateCRUDWorkflow(
   };
 
   // Create workflow.
-  const workflow = await postRequest(
-    `https://${credentials.domain}/api/workflow`,
-    {
-      ...payload,
-    }
-  );
+  const workflow = await postRequest(`${credentials.origin}/api/workflow`, {
+    ...payload,
+  });
   spinner.stop();
   if (workflow.data.id) {
     console.log("Successfully created a workflow. 🎉");
     console.log(
-      `${chalk.bold("View in browser:")} https://${
-        credentials.domain
-      }/workflows/${workflow.data.id}`
+      `${chalk.bold("View in browser:")} ${credentials.origin}/workflows/${
+        workflow.data.id
+      }`
     );
   } else {
     console.log("Error creating workflow: ");
@@ -128,17 +123,13 @@ export async function generateCRUDWorkflow(
 
   // Enable workflow.
   spinner = ora("Deploying workflow").start();
-  await postRequest(
-    `https://${credentials.domain}/api/workflow/${workflow.data.id}`,
-    {
-      isEnabled: true,
-    }
-  );
+  await postRequest(`${credentials.origin}/api/workflow/${workflow.data.id}`, {
+    isEnabled: true,
+  });
   spinner.stop();
   console.log("Successfully deployed a workflow. 🚀");
-  const domainParts = credentials.domain.split(".");
-  if (workflow.data.apiKey && domainParts.length === 3) {
-    const curlCommand = `curl -X POST --url "https://api.${domainParts[1]}.${domainParts[2]}/v1/workflows/${workflow.data.id}/startTrigger?workflowApiKey=${workflow.data.apiKey}" --data '{"type":"read"}' -H 'Content-Type: application/json'`;
+  if (workflow.data.apiKey) {
+    const curlCommand = `curl -X POST --url "https://api.retool.com/v1/workflows/${workflow.data.id}/startTrigger?workflowApiKey=${workflow.data.apiKey}" --data '{"type":"read"}' -H 'Content-Type: application/json'`;
     console.log(
       `Retool Cloud users can ${chalk.bold("cURL it:")} ${curlCommand}`
     );

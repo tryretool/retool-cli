@@ -35,7 +35,7 @@ export async function createApp(
   const spinner = ora("Creating App").start();
 
   const createAppResult = await postRequest(
-    `https://${credentials.domain}/api/pages/createPage`,
+    `${credentials.origin}/api/pages/createPage`,
     {
       pageName: appName,
       isGlobalWidget: false,
@@ -53,7 +53,7 @@ export async function createApp(
   } else {
     console.log("Successfully created an App. 🎉");
     console.log(
-      `${chalk.bold("View in browser:")} https://${credentials.domain}/editor/${
+      `${chalk.bold("View in browser:")} ${credentials.origin}/editor/${
         page.uuid
       }`
     );
@@ -93,7 +93,7 @@ export async function deleteApp(
 
   // Delete the app.
   const spinner = ora("Deleting App").start();
-  await postRequest(`https://${credentials.domain}/api/folders/deletePage`, {
+  await postRequest(`${credentials.origin}/api/folders/deletePage`, {
     pageId: app[0].id,
   });
   spinner.stop();
@@ -107,7 +107,7 @@ export async function getAppsAndFolders(
   const spinner = ora(`Fetching all apps.`).start();
 
   const fetchAppsResponse = await getRequest(
-    `https://${credentials.domain}/api/pages?mobileAppsOnly=false`
+    `${credentials.origin}/api/pages?mobileAppsOnly=false`
   );
 
   spinner.stop();

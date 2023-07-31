@@ -171,10 +171,10 @@ const handler = async function (argv: any) {
     // Fetch Retool DB schema and data.
     const spinner = ora(`Fetching ${tableName} metadata`).start();
     const infoReq = getRequest(
-      `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${tableName}/info`
+      `${credentials.origin}/api/grid/${credentials.gridId}/table/${tableName}/info`
     );
     const dataReq = postRequest(
-      `https://${credentials.domain}/api/grid/${credentials.gridId}/table/${tableName}/data`,
+      `${credentials.origin}/api/grid/${credentials.gridId}/table/${tableName}/data`,
       {
         filters: [],
         sorting: [],
@@ -212,7 +212,7 @@ const handler = async function (argv: any) {
           data: string[][];
         };
       } = await postRequest(
-        `https://${credentials.domain}/api/grid/retooldb/generateData`,
+        `${credentials.origin}/api/grid/retooldb/generateData`,
         {
           fields: retoolDBInfo.tableInfo.fields.map((field) => {
             return {
@@ -295,7 +295,7 @@ const handler = async function (argv: any) {
 
     // Insert to Retool DB.
     await postRequest(
-      `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
+      `${credentials.origin}/api/grid/${credentials.gridId}/action`,
       {
         kind: "BulkInsertIntoTable",
         tableName: tableName,
@@ -304,8 +304,8 @@ const handler = async function (argv: any) {
     );
     console.log("Successfully inserted data. 🤘🏻");
     console.log(
-      `\n${chalk.bold("View in browser:")} https://${
-        credentials.domain
+      `\n${chalk.bold("View in browser:")} ${
+        credentials.origin
       }/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
     );
   }

@@ -32,7 +32,7 @@ export async function fetchAllTables(
 ): Promise<Array<Table> | undefined> {
   const spinner = ora("Fetching tables from Retool DB").start();
   const fetchDBsResponse = await getRequest(
-    `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`
+    `${credentials.origin}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`
   );
   spinner.stop();
 
@@ -66,7 +66,7 @@ export async function deleteTable(
   // Delete the table.
   const spinner = ora(`Deleting ${tableName}`).start();
   await postRequest(
-    `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
+    `${credentials.origin}/api/grid/${credentials.gridId}/action`,
     {
       kind: "DeleteTable",
       payload: {
@@ -108,7 +108,7 @@ export async function createTable(
     },
   };
   const createTableResult = await postRequest(
-    `https://${credentials.domain}/api/grid/${credentials.gridId}/action`,
+    `${credentials.origin}/api/grid/${credentials.gridId}/action`,
     {
       ...payload,
     }
@@ -125,9 +125,9 @@ export async function createTable(
       console.log("");
     }
     console.log(
-      `${chalk.bold("View in browser:")} https://${
-        credentials.domain
-      }/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
+      `${chalk.bold("View in browser:")} ${credentials.origin}/resources/data/${
+        credentials.retoolDBUuid
+      }/${tableName}?env=production`
     );
     if (credentials.hasConnectionString && printConnectionString) {
       await logConnectionStringDetails();

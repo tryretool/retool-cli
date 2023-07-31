@@ -69,20 +69,21 @@ export const generateWorkflowMetadata = async (tableName: string) => {
       // headless: false,
     });
     const page = await browser.newPage();
+    const domain = new URL(credentials.origin).hostname;
     const cookies = [
       {
-        domain: credentials.domain,
+        domain,
         name: "accessToken",
         value: credentials.accessToken,
       },
       {
-        domain: credentials.domain,
+        domain,
         name: "xsrfToken",
         value: credentials.xsrf,
       },
     ];
     await page.setCookie(...cookies);
-    await page.goto(`https://${credentials.domain}/workflows`);
+    await page.goto(`${credentials.origin}/workflows`);
     await waitTillHTMLRendered(page);
 
     // Call window.generateWorkflowFromTemplateData() on the page

@@ -85,7 +85,7 @@ const handler = async function (argv: any) {
     console.log(
       "\nTo generate an app to visually perform CRUD on table above:"
     );
-    console.log(`1: Go to https://${credentials.domain}`);
+    console.log(`1: Go to ${credentials.origin}`);
     console.log(`2: Click "Create New" > "From Database"`);
     console.log(`3: Resource is "retool_db", select table "${tableName}"`);
   }

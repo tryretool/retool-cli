@@ -24,11 +24,11 @@ export function isEmailValid(email: string) {
   return true;
 }
 
-export function isDomainValid(domain: string) {
+export function isOriginValid(origin: string) {
   // https://www.regextester.com/23
   const hostnameRegEx =
-    /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;
-  if (domain.match(hostnameRegEx)) {
+    /^(https?:\/\/)(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;
+  if (origin.match(hostnameRegEx)) {
     return true;
   }
   return false;

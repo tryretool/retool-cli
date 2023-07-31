@@ -87,10 +87,10 @@ const handler = async function (argv: any) {
   );
 
   // Step 5: Persist credentials
-  const domain = `${org}.retool.com`;
-  const userRes = await getRequest(`https://${domain}/api/user`);
+  const origin = `https://${org}.retool.com`;
+  const userRes = await getRequest(`${origin}/api/user`);
   persistCredentials({
-    domain,
+    origin,
     accessToken,
     xsrf: xsrfToken,
     firstName: userRes.data.user?.firstName,

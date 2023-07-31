@@ -55,22 +55,28 @@ const handler = async function (argv: any) {
           name: "Log in by pasting in cookies",
           value: "cookies",
         },
+        {
+          name: "Log in to localhost:3000",
+          value: "localhost",
+        },
       ],
     },
   ]);
   if (loginMethod === "browser") {
     await loginViaBrowser();
   } else if (loginMethod === "email") {
-    await loginViaEmail();
+    await loginViaEmail(false);
   } else if (loginMethod === "cookies") {
     askForCookies();
+  } else if (loginMethod === "localhost") {
+    await loginViaEmail(true);
   }
 };
 
 // Ask the user to input their email and password.
 // Fire off a request to Retool's login & auth endpoints.
 // Persist the credentials.
-async function loginViaEmail() {
+async function loginViaEmail(localhost = false) {
   const { email, password } = await inquirer.prompt([
     {
       name: "email",
@@ -84,8 +90,12 @@ async function loginViaEmail() {
     },
   ]);
 
+  const loginOrigin = localhost
+    ? "http://localhost:3000"
+    : "https://login.retool.com";
+
   // Step 1: Hit /api/login with email and password.
-  const login = await postRequest(`https://login.retool.com/api/login`, {
+  const login = await postRequest(`${loginOrigin}/api/login`, {
     email,
     password,
   });
@@ -97,26 +107,30 @@ async function loginViaEmail() {
 
   // Step 2: Hit /auth/saveAuth with authorizationToken.
   const authResponse = await postRequest(
-    authUrl,
+    localhost ? `${loginOrigin}${authUrl}` : authUrl,
     {
       authorizationToken,
     },
     true,
     {
-      origin: "https://login.retool.com",
+      origin: loginOrigin,
     }
   );
   const { redirectUri } = authResponse.data;
-  const redirectUrl = redirectUri ? new URL(redirectUri) : undefined;
+  const redirectUrl = localhost
+    ? new URL(loginOrigin)
+    : redirectUri
+    ? new URL(redirectUri)
+    : undefined;
   const accessToken = accessTokenFromCookies(
     authResponse.headers["set-cookie"]
   );
   const xsrfToken = xsrfTokenFromCookies(authResponse.headers["set-cookie"]);
 
   // Step 3: Persist the credentials.
-  if (redirectUrl?.hostname && accessToken && xsrfToken) {
+  if (redirectUrl?.origin && accessToken && xsrfToken) {
     persistCredentials({
-      domain: redirectUrl.hostname,
+      origin: redirectUrl.origin,
       accessToken,
       xsrf: xsrfToken,
       firstName: authResponse.data.user?.firstName,
@@ -161,7 +175,7 @@ async function loginViaBrowser() {
     const userRes = await getRequest(`https://${url.hostname}/api/user`);
 
     persistCredentials({
-      domain: url.hostname,
+      origin: url.origin,
       accessToken,
       xsrf: xsrfToken,
       firstName: userRes.data.user?.firstName,

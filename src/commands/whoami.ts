@@ -23,7 +23,7 @@ const handler = function (argv: ArgumentsCamelCase) {
       credentials.email
     ) {
       console.log(
-        `Logged in to ${chalk.bold(credentials.domain)} as ${chalk.bold(
+        `Logged in to ${chalk.bold(credentials.origin)} as ${chalk.bold(
           credentials.firstName
         )} ${chalk.bold(credentials.lastName)} (${credentials.email}) 🙌🏻`
       );

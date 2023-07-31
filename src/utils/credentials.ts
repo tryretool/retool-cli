@@ -1,7 +1,7 @@
 import { Entry } from "@napi-rs/keyring";
 
 import { getRequest } from "./networking";
-import { isAccessTokenValid, isDomainValid, isXsrfValid } from "./validation";
+import { isAccessTokenValid, isOriginValid, isXsrfValid } from "./validation";
 
 const axios = require("axios");
 const inquirer = require("inquirer");
@@ -18,7 +18,7 @@ const RETOOL_CLI_ACCOUNT_NAME = "retool-cli-user";
  */
 
 export type Credentials = {
-  domain: string; // The 3 required properties are fetched during login.
+  origin: string; // The 3 required properties are fetched during login.
   xsrf: string;
   accessToken: string;
   gridId?: string; // The next 3 properties are fetched the first time user interacts with RetoolDB.
@@ -34,9 +34,9 @@ export function askForCookies() {
   inquirer
     .prompt([
       {
-        name: "domain",
+        name: "origin",
         message:
-          "What is your Retool domain? (e.g., my-org.retool.com). Don't include https:// or http://",
+          "What is your Retool origin? (e.g., https://my-org.retool.com).",
         type: "input",
       },
       {
@@ -52,8 +52,10 @@ export function askForCookies() {
       },
     ])
     .then(function (answer: Credentials) {
-      if (!isDomainValid(answer.domain)) {
-        console.log("Error: Domain is invalid.");
+      if (!isOriginValid(answer.origin)) {
+        console.log(
+          "Error: Origin is invalid. Remember to include https:// and exclude trailing slash."
+        );
         process.exit(1);
       } else if (!isXsrfValid(answer.xsrf)) {
         console.log("Error: XSRF token is invalid.");
@@ -102,9 +104,7 @@ async function fetchDBCredentials() {
   }
 
   // 1. Fetch all resources
-  const resources = await getRequest(
-    `https://${credentials.domain}/api/resources`
-  );
+  const resources = await getRequest(`${credentials.origin}/api/resources`);
 
   // 2. Filter down to Retool DB UUID
   const retoolDBs = resources?.data?.resources?.filter(
@@ -112,7 +112,7 @@ async function fetchDBCredentials() {
   );
   if (retoolDBs?.length < 1) {
     console.log(
-      `\nError: Retool DB not found. Create one at https://${credentials.domain}/resources`
+      `\nError: Retool DB not found. Create one at ${credentials.origin}/resources`
     );
     return;
   }
@@ -121,7 +121,7 @@ async function fetchDBCredentials() {
 
   // 3. Fetch Grid Info
   const grid = await getRequest(
-    `https://${credentials.domain}/api/grid/retooldb/${retoolDBUuid}?env=production`
+    `${credentials.origin}/api/grid/retooldb/${retoolDBUuid}?env=production`
   );
   persistCredentials({
     ...credentials,

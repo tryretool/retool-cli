@@ -38,7 +38,7 @@ async function getConnectionString(): Promise<string | undefined> {
     return;
   }
   const grid = await getRequest(
-    `https://${credentials.domain}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`,
+    `${credentials.origin}/api/grid/retooldb/${credentials.retoolDBUuid}?env=production`,
     false
   );
   return grid.data?.gridInfo?.connectionString;
