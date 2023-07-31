@@ -96,13 +96,13 @@ export const generateWorkflowMetadata = async (tableName: string) => {
         // Replaces instances of "name_placeholder" with the newly created table name
         workflowTemplate.map((item) => {
           if (item.pluginTemplate.template.tableName === "name_placeholder") {
-            item.pluginTemplate.template.tableName = tableName;
+            item.pluginTemplate.template.tableName = `\"${tableName}\"`;
           }
           if (item.pluginTemplate.template.query.includes("name_placeholder")) {
             item.pluginTemplate.template.query =
               item.pluginTemplate.template.query.replace(
                 "name_placeholder",
-                tableName
+                `\"${tableName}\"`
               );
           }
 
