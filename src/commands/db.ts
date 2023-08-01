@@ -11,6 +11,7 @@ import {
   createTable,
   deleteTable,
   fetchAllTables,
+  parseDBData,
   verifyTableExists,
 } from "../utils/table";
 
@@ -319,30 +320,6 @@ const handler = async function (argv: any) {
     );
   }
 };
-
-// data param is in format:
-// ["col_1","col_2","col_3"]
-// ["val_1","val_2","val_3"]
-// transform to:
-// [["col_1","col_2","col_3"],["val_1","val_2","val_3"]]
-function parseDBData(data: string): string[][] {
-  try {
-    let rows = data.trim().split("\n");
-    // Remove all quotes and [] brackets.
-    rows = rows.map((row: string) =>
-      row.replace(/"/g, "").replace(/\[/g, "").replace(/\]/g, "")
-    );
-    const parsedRows: string[][] = [];
-    for (let i = 0; i < rows.length; i++) {
-      parsedRows.push(rows[i].split(","));
-    }
-    return parsedRows;
-  } catch (e) {
-    console.log("Error parsing table data.");
-    console.log(e);
-    process.exit(1);
-  }
-}
 
 const commandModule: CommandModule = {
   command,

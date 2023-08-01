@@ -27,6 +27,3 @@ describe ("xsrfTokenFromCookies", () => {
         expect(xsrfTokenFromCookies([])).toBe(undefined);
     });
 });
-
-
-  

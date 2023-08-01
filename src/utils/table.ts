@@ -135,6 +135,33 @@ export async function createTable(
   }
 }
 
+// data param is in format:
+// ["col_1","col_2","col_3"]
+// ["val_1","val_2","val_3"]
+// transform to:
+// [["col_1","col_2","col_3"],["val_1","val_2","val_3"]]
+export function parseDBData(data: string): string[][] {
+  try {
+    const rows = data.split("\n");
+    rows.forEach((row, index, arr) =>
+      arr[index] = row.slice(1,-1) // Remove [] brackets.
+    );
+    const parsedRows: string[][] = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i].split(",");
+      row.forEach((val, index, arr) =>
+        arr[index] = val.slice(1,-1) // Remove "".
+      );
+      parsedRows.push(row);
+    }
+    return parsedRows;
+  } catch (e) {
+    console.log("Error parsing table data.");
+    console.log(e);
+    process.exit(1);
+  }
+}
+
 export async function collectTableName(): Promise<string> {
   const { tableName } = await inquirer.prompt([
     {
