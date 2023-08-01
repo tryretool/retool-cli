@@ -1,3 +1,4 @@
+import untildify from "untildify";
 import { CommandModule } from "yargs";
 
 import { getAndVerifyFullCredentials } from "../utils/credentials";
@@ -100,18 +101,19 @@ const handler = async function (argv: any) {
 
   // Handle `retool db --upload <path-to-csv>`
   if (argv.upload) {
+    const filePath = untildify(argv.upload);
     // Verify file exists, is a csv, and is < 15MB.
     if (
-      !fs.existsSync(argv.upload) ||
-      !argv.upload.endsWith(".csv") ||
-      fs.statSync(argv.upload).size > 18000000
+      !fs.existsSync(filePath) ||
+      !filePath.endsWith(".csv") ||
+      fs.statSync(filePath).size > 18000000
     ) {
       console.log("The file does not exist, is not a CSV, or is > 18MB.");
       return;
     }
 
     //Default to csv filename if no table name is provided.
-    let tableName = path.basename(argv.upload).slice(0, -4);
+    let tableName = path.basename(filePath).slice(0, -4);
     const { inputName } = await inquirer.prompt([
       {
         name: "inputName",
@@ -126,7 +128,7 @@ const handler = async function (argv: any) {
     tableName = tableName.replace(/\s/g, "_");
 
     const spinner = ora("Parsing CSV").start();
-    const parseResult = await parseCSV(argv.upload);
+    const parseResult = await parseCSV(filePath);
     spinner.stop();
     if (!parseResult.success) {
       console.log("Failed to parse CSV, error:");
