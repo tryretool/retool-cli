@@ -1,4 +1,4 @@
-import { RetoolDBField } from "../commands/db";
+import { RetoolDBField } from "./table";
 
 const inquirer = require("inquirer");
 const TreePrompt = require("inquirer-tree-prompt");

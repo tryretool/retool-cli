@@ -4,12 +4,44 @@ import ora from "ora";
 import { logConnectionStringDetails } from "./connectionString";
 import { Credentials } from "./credentials";
 import { getRequest, postRequest } from "./networking";
-import { FieldMapping } from "../commands/db";
 
 const inquirer = require("inquirer");
 
 type Table = {
   name: string;
+};
+
+type FieldMapping = Array<{
+  csvField: string;
+  dbField: string | undefined;
+  ignored: boolean;
+  dbType?: string;
+}>;
+
+// This type is returned from Retool table/info API endpoint.
+export type RetoolDBTableInfo = {
+  fields: Array<RetoolDBField>;
+  primaryKeyColumn: string;
+  totalRowCount: number;
+};
+
+// A "field" is a single Retool DB column.
+export type RetoolDBField = {
+  name: string;
+  type: any; //GridFieldType
+  columnDefault:
+    | {
+        kind: "NoDefault";
+      }
+    | {
+        kind: "LiteralDefault";
+        value: string;
+      }
+    | {
+        kind: "ExpressionDefault";
+        value: string;
+      };
+  generatedColumnType: string | undefined;
 };
 
 // Verify that the table exists in Retool DB, otherwise exit.
@@ -42,11 +74,31 @@ export async function fetchAllTables(
   }
 }
 
+// Fetches the schema of a table from a Retool DB. Assumes the table exists.
+export async function fetchTableInfo(
+  tableName: string,
+  credentials: Credentials
+): Promise<RetoolDBTableInfo | undefined> {
+  const spinner = ora(`Fetching ${tableName} metadata`).start();
+  const infoResponse = await getRequest(
+    `${credentials.origin}/api/grid/${credentials.gridId}/table/${tableName}/info`
+  );
+  spinner.stop();
+
+  const { tableInfo } = infoResponse.data;
+  if (tableInfo) {
+    return tableInfo;
+  }
+}
+
 export async function deleteTable(
   tableName: string,
   credentials: Credentials,
   confirmDeletion: boolean
 ) {
+  // Verify that the provided table name exists.
+  await verifyTableExists(tableName, credentials);
+
   if (confirmDeletion) {
     const { confirm } = await inquirer.prompt([
       {
@@ -59,9 +111,6 @@ export async function deleteTable(
       process.exit(0);
     }
   }
-
-  // Verify that the provided db name exists.
-  await verifyTableExists(tableName, credentials);
 
   // Delete the table.
   const spinner = ora(`Deleting ${tableName}`).start();
@@ -143,14 +192,14 @@ export async function createTable(
 export function parseDBData(data: string): string[][] {
   try {
     const rows = data.split("\n");
-    rows.forEach((row, index, arr) =>
-      arr[index] = row.slice(1,-1) // Remove [] brackets.
+    rows.forEach(
+      (row, index, arr) => (arr[index] = row.slice(1, -1)) // Remove [] brackets.
     );
     const parsedRows: string[][] = [];
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i].split(",");
-      row.forEach((val, index, arr) =>
-        arr[index] = val.slice(1,-1) // Remove "".
+      row.forEach(
+        (val, index, arr) => (arr[index] = val.slice(1, -1)) // Remove "".
       );
       parsedRows.push(row);
     }

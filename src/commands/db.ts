@@ -5,6 +5,7 @@ import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { parseCSV } from "../utils/csv";
 import { generateData, promptForDataType } from "../utils/faker";
 import { getRequest, postRequest } from "../utils/networking";
+import type { RetoolDBTableInfo } from "../utils/table";
 import {
   collectColumnNames,
   collectTableName,
@@ -22,42 +23,9 @@ const chalk = require("chalk");
 const inquirer = require("inquirer");
 const ora = require("ora");
 
-export type FieldMapping = Array<{
-  csvField: string;
-  dbField: string | undefined;
-  ignored: boolean;
-  dbType?: string;
-}>;
-
 type DBInfoPayload = {
   success: true;
   tableInfo: RetoolDBTableInfo;
-};
-
-// This type is returned from Retool table/info API endpoint.
-type RetoolDBTableInfo = {
-  fields: Array<RetoolDBField>;
-  primaryKeyColumn: string;
-  totalRowCount: number;
-};
-
-// A "field" is a single Retool DB column.
-export type RetoolDBField = {
-  name: string;
-  type: any; //GridFieldType
-  columnDefault:
-    | {
-        kind: "NoDefault";
-      }
-    | {
-        kind: "LiteralDefault";
-        value: string;
-      }
-    | {
-        kind: "ExpressionDefault";
-        value: string;
-      };
-  generatedColumnType: string | undefined;
 };
 
 const command = "db";

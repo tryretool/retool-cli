@@ -1,6 +1,6 @@
 import { CommandModule } from "yargs";
 
-import { createApp, deleteApp } from "../utils/apps";
+import { createAppForTable, deleteApp } from "../utils/apps";
 import { getAndVerifyFullCredentials } from "../utils/credentials";
 import {
   collectColumnNames,
@@ -58,7 +58,7 @@ const handler = async function (argv: any) {
 
     await deleteTable(tableName, credentials, false);
     await deleteWorkflow(workflowName, credentials, false);
-    await deleteApp(tableName, credentials, false);
+    await deleteApp(`${tableName} CRUD App`, credentials, false);
   }
 
   // Handle `retool scaffold`
@@ -80,14 +80,13 @@ const handler = async function (argv: any) {
     await generateCRUDWorkflow(tableName, credentials);
     console.log("\n");
 
-    await createApp(tableName, credentials);
-
-    console.log(
-      "\nTo generate an app to visually perform CRUD on table above:"
+    const searchColumnName = colNames.length > 0 ? colNames[0] : "id";
+    await createAppForTable(
+      `${tableName} CRUD App`,
+      tableName,
+      searchColumnName,
+      credentials
     );
-    console.log(`1: Go to ${credentials.origin}`);
-    console.log(`2: Click "Create New" > "From Database"`);
-    console.log(`3: Resource is "retool_db", select table "${tableName}"`);
   }
 };
 

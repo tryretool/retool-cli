@@ -3,12 +3,18 @@ import { CommandModule } from "yargs";
 import {
   collectAppName,
   createApp,
+  createAppForTable,
   deleteApp,
   getAppsAndFolders,
 } from "../utils/apps";
 import type { App } from "../utils/apps";
 import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { dateOptions } from "../utils/date";
+import {
+  collectTableName,
+  fetchTableInfo,
+  verifyTableExists,
+} from "../utils/table";
 
 const command = "apps";
 const describe = "Interface with Retool Apps.";
@@ -16,6 +22,10 @@ const builder: CommandModule["builder"] = {
   create: {
     alias: "c",
     describe: `Create a new app.`,
+  },
+  "create-from-table": {
+    alias: "t",
+    describe: `Create a new app to visualize a Retool DB table.`,
   },
   list: {
     alias: "l",
@@ -97,6 +107,29 @@ const handler = async function (argv: any) {
         printApps(apps);
       }
     }
+  }
+
+  // Handle `retool apps --create-from-table`
+  else if (argv.t) {
+    const tableName = await collectTableName();
+    await verifyTableExists(tableName, credentials);
+    const tableInfo = await fetchTableInfo(tableName, credentials);
+    if (!tableInfo) {
+      console.error(`Table ${tableName} info not found.`);
+      process.exit(1);
+    }
+    const appName = await collectAppName();
+    // Use the first non-pkey column as the search column.
+    const searchColumnName = tableInfo.fields.find(
+      (field) => field.name !== tableInfo.primaryKeyColumn
+    )?.name;
+
+    await createAppForTable(
+      appName,
+      tableName,
+      searchColumnName || tableInfo.primaryKeyColumn,
+      credentials
+    );
   }
 
   // Handle `retool apps --create`

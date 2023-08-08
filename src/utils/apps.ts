@@ -61,6 +61,40 @@ export async function createApp(
   }
 }
 
+export async function createAppForTable(
+  appName: string,
+  tableName: string,
+  columnName: string, //The column to use for search bar.
+  credentials: Credentials
+) {
+  const spinner = ora("Creating App").start();
+
+  const createAppResult = await postRequest(
+    `${credentials.origin}/api/pages/autogeneratePage`,
+    {
+      appName,
+      resourceName: credentials.retoolDBUuid,
+      tableName,
+      columnName,
+    }
+  );
+  spinner.stop();
+
+  const { pageUuid } = createAppResult.data;
+  if (!pageUuid) {
+    console.log("Error creating app.");
+    console.log(createAppResult.data);
+    process.exit(1);
+  } else {
+    console.log("Successfully created an App. 🎉");
+    console.log(
+      `${chalk.bold("View in browser:")} ${
+        credentials.origin
+      }/editor/${pageUuid}`
+    );
+  }
+}
+
 export async function deleteApp(
   appName: string,
   credentials: Credentials,
