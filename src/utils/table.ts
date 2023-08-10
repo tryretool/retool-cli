@@ -191,7 +191,7 @@ export async function createTable(
 // [["col_1","col_2","col_3"],["val_1","val_2","val_3"]]
 export function parseDBData(data: string): string[][] {
   try {
-    const rows = data.split("\n");
+    const rows = data.trim().split("\n");
     rows.forEach(
       (row, index, arr) => (arr[index] = row.slice(1, -1)) // Remove [] brackets.
     );

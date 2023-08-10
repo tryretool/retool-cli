@@ -265,7 +265,7 @@ const handler = async function (argv: any) {
     }
 
     // Insert to Retool DB.
-    await postRequest(
+    const bulkInsertRes = await postRequest(
       `${credentials.origin}/api/grid/${credentials.gridId}/action`,
       {
         kind: "BulkInsertIntoTable",
@@ -273,12 +273,19 @@ const handler = async function (argv: any) {
         additions: generatedData,
       }
     );
-    console.log("Successfully inserted data. 🤘🏻");
-    console.log(
-      `\n${chalk.bold("View in browser:")} ${
-        credentials.origin
-      }/resources/data/${credentials.retoolDBUuid}/${tableName}?env=production`
-    );
+    if (bulkInsertRes.data.success) {
+      console.log("Successfully inserted data. 🤘🏻");
+      console.log(
+        `\n${chalk.bold("View in browser:")} ${
+          credentials.origin
+        }/resources/data/${
+          credentials.retoolDBUuid
+        }/${tableName}?env=production`
+      );
+    } else {
+      console.log("Error inserting data.");
+      console.log(bulkInsertRes.data);
+    }
   }
 
   // No flag specified.
