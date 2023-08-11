@@ -30,6 +30,7 @@ export type Credentials = {
 };
 
 // Legacy way of getting credentials.
+// TODO: Validate after each prompt instead of waiting for end.
 export function askForCookies() {
   inquirer
     .prompt([

@@ -18,6 +18,11 @@ type FieldMapping = Array<{
   dbType?: string;
 }>;
 
+export type DBInfoPayload = {
+  success: true;
+  tableInfo: RetoolDBTableInfo;
+};
+
 // This type is returned from Retool table/info API endpoint.
 export type RetoolDBTableInfo = {
   fields: Array<RetoolDBField>;
@@ -209,6 +214,64 @@ export function parseDBData(data: string): string[][] {
     console.log(e);
     process.exit(1);
   }
+}
+
+export async function generateDataWithGPT(
+  retoolDBInfo: DBInfoPayload,
+  fields: RetoolDBField[],
+  primaryKeyMaxVal: number,
+  credentials: Credentials,
+  exitOnFailure: boolean
+): Promise<
+  | {
+      fields: string[];
+      data: string[][];
+    }
+  | undefined
+> {
+  const genDataRes: {
+    data: {
+      data: string[][];
+    };
+  } = await postRequest(
+    `${credentials.origin}/api/grid/retooldb/generateData`,
+    {
+      fields: retoolDBInfo.tableInfo.fields.map((field) => {
+        return {
+          fieldName: field.name,
+          fieldType: field.type,
+          isPrimaryKey: field.name === retoolDBInfo.tableInfo.primaryKeyColumn,
+        };
+      }),
+    },
+    exitOnFailure
+  );
+  const colNames = fields.map((field) => field.name);
+  const generatedRows: string[][] = [];
+  if (colNames.length !== genDataRes.data.data[0].length) {
+    if (exitOnFailure) {
+      console.log("Error: GPT did not generate the correct number of columns");
+      process.exit(1);
+    } else {
+      return;
+    }
+  }
+
+  // GPT does not generate primary keys correctly.
+  // Generate them manually by adding the max primary key value to row #.
+  for (let i = 0; i < genDataRes.data.data.length; i++) {
+    const row = genDataRes.data.data[i];
+    for (let j = 0; j < row.length; j++) {
+      if (colNames[j] === retoolDBInfo.tableInfo.primaryKeyColumn) {
+        row[j] = (primaryKeyMaxVal + i + 1).toString();
+      }
+    }
+    generatedRows.push(row);
+  }
+  return {
+    fields: colNames,
+    data: generatedRows,
+  };
 }
 
 export async function collectTableName(): Promise<string> {

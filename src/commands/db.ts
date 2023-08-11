@@ -5,13 +5,14 @@ import { getAndVerifyFullCredentials } from "../utils/credentials";
 import { parseCSV } from "../utils/csv";
 import { generateData, promptForDataType } from "../utils/faker";
 import { getRequest, postRequest } from "../utils/networking";
-import type { RetoolDBTableInfo } from "../utils/table";
 import {
+  DBInfoPayload,
   collectColumnNames,
   collectTableName,
   createTable,
   deleteTable,
   fetchAllTables,
+  generateDataWithGPT,
   parseDBData,
   verifyTableExists,
 } from "../utils/table";
@@ -22,11 +23,6 @@ const path = require("path");
 const chalk = require("chalk");
 const inquirer = require("inquirer");
 const ora = require("ora");
-
-type DBInfoPayload = {
-  success: true;
-  tableInfo: RetoolDBTableInfo;
-};
 
 const command = "db";
 const describe = "Interface with Retool DB.";
@@ -61,7 +57,7 @@ const builder: CommandModule["builder"] = {
     nargs: 1,
   },
   gpt: {
-    describe: `A modifier for gendata that uses GPT. Requires OpenAI to be configured in Retool. Usage:
+    describe: `A modifier for gendata that uses GPT. Usage:
     retool db --gendata <table-name> --gpt`,
   },
 };
@@ -178,48 +174,21 @@ const handler = async function (argv: any) {
     // Generate data using GPT.
     if (argv.gpt) {
       spinner.start("Generating data using GPT");
-      const genDataRes: {
-        data: {
-          data: string[][];
-        };
-      } = await postRequest(
-        `${credentials.origin}/api/grid/retooldb/generateData`,
-        {
-          fields: retoolDBInfo.tableInfo.fields.map((field) => {
-            return {
-              fieldName: field.name,
-              fieldType: field.type,
-              isPrimaryKey:
-                field.name === retoolDBInfo.tableInfo.primaryKeyColumn,
-            };
-          }),
-        }
+
+      const gptRes = await generateDataWithGPT(
+        retoolDBInfo,
+        fields,
+        primaryKeyMaxVal,
+        credentials,
+        true
       );
-      spinner.stop();
-      const colNames = fields.map((field) => field.name);
-      const generatedRows: string[][] = [];
-      if (colNames.length !== genDataRes.data.data[0].length) {
-        console.log(
-          "Error: GPT did not generate the correct number of columns"
-        );
+      //Shouldn't happen, generateDataWithGPT should exit on failure.
+      if (!gptRes) {
         process.exit(1);
       }
+      generatedData = gptRes;
 
-      // GPT does not generate primary keys correctly.
-      // Generate them manually by adding the max primary key value to row #.
-      for (let i = 0; i < genDataRes.data.data.length; i++) {
-        const row = genDataRes.data.data[i];
-        for (let j = 0; j < row.length; j++) {
-          if (colNames[j] === retoolDBInfo.tableInfo.primaryKeyColumn) {
-            row[j] = (primaryKeyMaxVal + i + 1).toString();
-          }
-        }
-        generatedRows.push(row);
-      }
-      generatedData = {
-        fields: colNames,
-        data: generatedRows,
-      };
+      spinner.stop();
     }
     // Generate data using faker.
     else {

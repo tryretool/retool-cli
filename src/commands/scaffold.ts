@@ -2,13 +2,15 @@ import { CommandModule } from "yargs";
 
 import { createAppForTable, deleteApp } from "../utils/apps";
 import { Credentials, getAndVerifyFullCredentials } from "../utils/credentials";
-import { postRequest } from "../utils/networking";
+import { getRequest, postRequest } from "../utils/networking";
 import {
   collectColumnNames,
   collectTableName,
   createTable,
   deleteTable,
+  generateDataWithGPT,
 } from "../utils/table";
+import type { DBInfoPayload } from "../utils/table";
 import { deleteWorkflow, generateCRUDWorkflow } from "../utils/workflows";
 
 const inquirer = require("inquirer");
@@ -57,6 +59,7 @@ const handler = async function (argv: any) {
       process.exit(0);
     }
 
+    //TODO: Could be parallelized.
     await deleteTable(tableName, credentials, false);
     await deleteWorkflow(workflowName, credentials, false);
     await deleteApp(`${tableName} CRUD App`, credentials, false);
@@ -75,7 +78,7 @@ const handler = async function (argv: any) {
 
     await createTable(tableName, colNames, undefined, credentials, false);
     // Fire and forget
-    void insertSampleData(tableName, colNames, credentials);
+    void insertSampleData(tableName, credentials);
     console.log(
       `Generate mock data with: \`retool db --gendata ${tableName}\``
     );
@@ -93,38 +96,34 @@ const handler = async function (argv: any) {
   }
 };
 
-// Insert 3 rows of sample data into the table.
-// Sample data is of the form: [[0, "sample", "sample"], [1, "sample", "sample"], [2, "sample", "sample"]]
 const insertSampleData = async function (
   tableName: string,
-  colNames: Array<string>,
   credentials: Credentials
 ) {
-  let fields = colNames;
-  if (!fields.includes("id")) {
-    fields = ["id", ...fields];
-  }
-  const pKeyIndex = fields.indexOf("id");
-  const data = [];
-  for (let i = 0; i < 3; i++) {
-    const row = [];
-    for (let j = 0; j < fields.length; j++) {
-      row.push(j == pKeyIndex ? `${i}` : "sample");
-    }
-    data.push(row);
-  }
-
-  await postRequest(
-    `${credentials.origin}/api/grid/${credentials.gridId}/action`,
-    {
-      kind: "BulkInsertIntoTable",
-      tableName: tableName,
-      additions: {
-        fields,
-        data,
-      },
-    }
+  const infoRes = await getRequest(
+    `${credentials.origin}/api/grid/${credentials.gridId}/table/${tableName}/info`,
+    false
   );
+  const retoolDBInfo: DBInfoPayload = infoRes.data;
+  const { fields } = retoolDBInfo.tableInfo;
+
+  const generatedData = await generateDataWithGPT(
+    retoolDBInfo,
+    fields,
+    0,
+    credentials,
+    false
+  );
+  if (generatedData) {
+    await postRequest(
+      `${credentials.origin}/api/grid/${credentials.gridId}/action`,
+      {
+        kind: "BulkInsertIntoTable",
+        tableName: tableName,
+        additions: generatedData,
+      }
+    );
+  }
 };
 
 const commandModule: CommandModule = {
