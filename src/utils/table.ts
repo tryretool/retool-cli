@@ -246,11 +246,12 @@ export async function generateDataWithGPT(
     },
     exitOnFailure
   );
+
   const colNames = fields.map((field) => field.name);
   const generatedRows: string[][] = [];
-  if (colNames.length !== genDataRes.data.data[0].length) {
+  if (!genDataRes || colNames.length !== genDataRes?.data?.data[0]?.length) {
     if (exitOnFailure) {
-      console.log("Error: GPT did not generate the correct number of columns");
+      console.log("Error: GPT did not generate data with correct schema.");
       process.exit(1);
     } else {
       return;

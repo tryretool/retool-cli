@@ -54,8 +54,8 @@ function handleError(error: any, exitOnFailure = true, url: string) {
   if (process.env.DEBUG) {
     console.error(error);
   }
+  console.error(`\nFailed to make request to ${url}.`);
   if (exitOnFailure) {
-    console.error(`\nFailed to make request to ${url}. Exiting.`);
     process.exit(1);
   }
 }

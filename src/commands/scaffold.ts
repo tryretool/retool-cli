@@ -62,7 +62,7 @@ const handler = async function (argv: any) {
     //TODO: Could be parallelized.
     await deleteTable(tableName, credentials, false);
     await deleteWorkflow(workflowName, credentials, false);
-    await deleteApp(`${tableName} CRUD App`, credentials, false);
+    await deleteApp(`${tableName} App`, credentials, false);
   }
 
   // Handle `retool scaffold`
@@ -88,7 +88,7 @@ const handler = async function (argv: any) {
 
     const searchColumnName = colNames.length > 0 ? colNames[0] : "id";
     await createAppForTable(
-      `${tableName} CRUD App`,
+      `${tableName} App`,
       tableName,
       searchColumnName,
       credentials
