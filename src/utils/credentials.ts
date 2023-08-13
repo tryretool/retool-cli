@@ -30,44 +30,52 @@ export type Credentials = {
 };
 
 // Legacy way of getting credentials.
-// TODO: Validate after each prompt instead of waiting for end.
-export function askForCookies() {
-  inquirer
-    .prompt([
-      {
-        name: "origin",
-        message:
-          "What is your Retool origin? (e.g., https://my-org.retool.com).",
-        type: "input",
-      },
-      {
-        name: "xsrf",
-        message:
-          "What is your XSRF token? (e.g., 26725f72-8129-47f7-835a-cba0e5dbcfe6) \n  Log into Retool, open cookies inspector.\n  In Chrome, hit ⌘+⌥+I (Mac) or Ctrl+Shift+I (Windows, Linux) to open dev tools.\n  Application tab > your-org.retool.com in Cookies menu > double click cookie value and copy it.",
-        type: "input",
-      },
-      {
-        name: "accessToken",
-        message: `What is your access token? It's also found in the cookies inspector.`,
-        type: "input",
-      },
-    ])
-    .then(function (answer: Credentials) {
-      if (!isOriginValid(answer.origin)) {
-        console.log(
-          "Error: Origin is invalid. Remember to include https:// and exclude trailing slash."
-        );
-        process.exit(1);
-      } else if (!isXsrfValid(answer.xsrf)) {
-        console.log("Error: XSRF token is invalid.");
-        process.exit(1);
-      } else if (!isAccessTokenValid(answer.accessToken)) {
-        console.log("Error: Access token is invalid.");
-        process.exit(1);
-      }
-      persistCredentials(answer);
-      console.log("Successfully saved credentials.");
-    });
+export async function askForCookies() {
+  let { origin } = await inquirer.prompt([
+    {
+      name: "origin",
+      message: "What is your Retool origin? (e.g., https://my-org.retool.com).",
+      type: "input",
+    },
+  ]);
+  //Check if last character is a slash. If so, remove it.
+  if (origin[origin.length - 1] === "/") {
+    origin = origin.slice(0, -1);
+  }
+  if (!isOriginValid(origin)) {
+    console.log("Error: Origin is invalid. Remember to include https://.");
+    process.exit(1);
+  }
+  const { xsrf } = await inquirer.prompt([
+    {
+      name: "xsrf",
+      message:
+        "What is your XSRF token? (e.g., 26725f72-8129-47f7-835a-cba0e5dbcfe6) \n  Log into Retool, open cookies inspector.\n  In Chrome, hit ⌘+⌥+I (Mac) or Ctrl+Shift+I (Windows, Linux) to open dev tools.\n  Application tab > your-org.retool.com in Cookies menu > double click cookie value and copy it.",
+      type: "input",
+    },
+  ]);
+  if (!isXsrfValid(xsrf)) {
+    console.log("Error: XSRF token is invalid.");
+    process.exit(1);
+  }
+  const { accessToken } = await inquirer.prompt([
+    {
+      name: "accessToken",
+      message: `What is your access token? It's also found in the cookies inspector.`,
+      type: "input",
+    },
+  ]);
+  if (!isAccessTokenValid(accessToken)) {
+    console.log("Error: Access token is invalid.");
+    process.exit(1);
+  }
+
+  persistCredentials({
+    origin,
+    xsrf,
+    accessToken,
+  });
+  console.log("Successfully saved credentials.");
 }
 
 export function persistCredentials(credentials: Credentials) {

@@ -67,7 +67,7 @@ const handler = async function (argv: any) {
   } else if (loginMethod === "email") {
     await loginViaEmail(false);
   } else if (loginMethod === "cookies") {
-    askForCookies();
+    await askForCookies();
   } else if (loginMethod === "localhost") {
     await loginViaEmail(true);
   }
