@@ -27,7 +27,6 @@ const handler = async function (argv: any) {
   ])) as { resourceName: string };
 
   let resourceId: number;
-  let resourceEnvironment: string;
 
   if (resourceName === "") {
     // TODO: Potentially add logic to create a resource here.
@@ -37,28 +36,7 @@ const handler = async function (argv: any) {
     const resourceByEnv = await getResourceByName(resourceName, credentials);
     validateResourceByEnv(resourceByEnv);
 
-    // Make a set of all environment options for the resource
-    const envOptions = new Set<string>(
-      Object.values(resourceByEnv).map((resource) => resource.environment)
-    );
-
-    // if there is only one environment, use that
-    if (envOptions.size === 1) {
-      resourceEnvironment = envOptions.values().next().value;
-    } else {
-      // otherwise, ask the user to select one
-      const { environment } = (await inquirer.prompt([
-        {
-          name: "environment",
-          message: "Which environment would you like to use?",
-          type: "list",
-          choices: Array.from(envOptions),
-        },
-      ])) as { environment: string };
-      resourceEnvironment = environment;
-    }
-
-    resourceId = resourceByEnv[resourceEnvironment].id;
+    resourceId = resourceByEnv["production"].id;
   }
 
   const { rpcAccessToken } = (await inquirer.prompt([
@@ -110,7 +88,6 @@ const handler = async function (argv: any) {
     RETOOL_SDK_ID: resourceName,
     RETOOL_SDK_HOST: origin,
     RETOOL_SDK_API_TOKEN: rpcAccessToken,
-    RETOOL_SDK_ENV: resourceEnvironment,
   };
   saveEnvVariablesToFile(envVariables, destinationPath + "/.env");
 
