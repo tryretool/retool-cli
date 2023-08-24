@@ -8,7 +8,7 @@ import {
   getAppsAndFolders,
 } from "../utils/apps";
 import type { App } from "../utils/apps";
-import { getAndVerifyFullCredentials } from "../utils/credentials";
+import { getAndVerifyCredentialsWithRetoolDB } from "../utils/credentials";
 import { dateOptions } from "../utils/date";
 import {
   collectTableName,
@@ -45,7 +45,7 @@ const builder: CommandModule["builder"] = {
   },
 };
 const handler = async function (argv: any) {
-  const credentials = await getAndVerifyFullCredentials();
+  const credentials = await getAndVerifyCredentialsWithRetoolDB();
 
   // Handle `retool apps --list [folder-name]`
   if (argv.list || argv.r) {

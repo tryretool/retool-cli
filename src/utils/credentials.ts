@@ -140,7 +140,7 @@ async function fetchDBCredentials() {
   });
 }
 
-export async function getAndVerifyFullCredentials() {
+export async function getAndVerifyCredentialsWithRetoolDB() {
   const spinner = ora("Verifying Retool DB credentials").start();
   let credentials = getCredentials();
   if (!credentials) {
@@ -161,6 +161,22 @@ export async function getAndVerifyFullCredentials() {
       process.exit(1);
     }
   }
+  spinner.stop();
+  return credentials;
+}
+
+export function getAndVerifyCredentials() {
+  const spinner = ora("Verifying Retool DB credentials").start();
+  const credentials = getCredentials();
+  if (!credentials) {
+    spinner.stop();
+    console.log(
+      `Error: No credentials found. To log in, run: \`retool login\``
+    );
+    process.exit(1);
+  }
+  axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
+  axios.defaults.headers.cookie = `accessToken=${credentials.accessToken};`;
   spinner.stop();
   return credentials;
 }

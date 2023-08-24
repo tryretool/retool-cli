@@ -1,7 +1,10 @@
 import { CommandModule } from "yargs";
 
 import { createAppForTable, deleteApp } from "../utils/apps";
-import { Credentials, getAndVerifyFullCredentials } from "../utils/credentials";
+import {
+  Credentials,
+  getAndVerifyCredentialsWithRetoolDB,
+} from "../utils/credentials";
 import { getRequest, postRequest } from "../utils/networking";
 import {
   collectColumnNames,
@@ -40,7 +43,7 @@ const builder: CommandModule["builder"] = {
   },
 };
 const handler = async function (argv: any) {
-  const credentials = await getAndVerifyFullCredentials();
+  const credentials = await getAndVerifyCredentialsWithRetoolDB();
 
   // Handle `retool scaffold -d <db_name>`
   if (argv.delete) {
