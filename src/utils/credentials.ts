@@ -166,7 +166,7 @@ export async function getAndVerifyCredentialsWithRetoolDB() {
 }
 
 export function getAndVerifyCredentials() {
-  const spinner = ora("Verifying Retool DB credentials").start();
+  const spinner = ora("Verifying Retool credentials").start();
   const credentials = getCredentials();
   if (!credentials) {
     spinner.stop();
