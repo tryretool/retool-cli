@@ -7,6 +7,7 @@ import {
   saveEnvVariablesToFile,
 } from "../utils/fileSave";
 import { createPlaygroundQuery } from "../utils/playgroundQuery";
+import { ResourceByEnv, getResourceByName } from "../utils/resources";
 
 const inquirer = require("inquirer");
 
@@ -17,20 +18,47 @@ const handler = async function (argv: any) {
   const credentials = getAndVerifyCredentials();
   const origin = credentials.origin;
 
-  const { rpcResourceId } = (await inquirer.prompt([
+  const { resourceName } = (await inquirer.prompt([
     {
-      name: "rpcResourceId",
+      name: "resourceName",
       message: "What is your RPC resource ID?",
       type: "input",
     },
-  ])) as { rpcResourceId: string };
+  ])) as { resourceName: string };
 
   let resourceId: number;
-  if (rpcResourceId === "") {
+  let resourceEnvironment: string;
+
+  if (resourceName === "") {
+    // TODO: Potentially add logic to create a resource here.
     console.log("Please enter a valid RPC resource ID");
     return;
   } else {
-    resourceId = 4;
+    const resourceByEnv = await getResourceByName(resourceName, credentials);
+    validateResourceByEnv(resourceByEnv);
+
+    // Make a set of all environment options for the resource
+    const envOptions = new Set<string>(
+      Object.values(resourceByEnv).map((resource) => resource.environment)
+    );
+
+    // if there is only one environment, use that
+    if (envOptions.size === 1) {
+      resourceEnvironment = envOptions.values().next().value;
+    } else {
+      // otherwise, ask the user to select one
+      const { environment } = (await inquirer.prompt([
+        {
+          name: "environment",
+          message: "Which environment would you like to use?",
+          type: "list",
+          choices: Array.from(envOptions),
+        },
+      ])) as { environment: string };
+      resourceEnvironment = environment;
+    }
+
+    resourceId = resourceByEnv[resourceEnvironment].id;
   }
 
   const { rpcAccessToken } = (await inquirer.prompt([
@@ -79,9 +107,10 @@ const handler = async function (argv: any) {
   await downloadGithubFolder(urlPath, destinationPath);
 
   const envVariables = {
-    RETOOL_SDK_ID: rpcResourceId,
+    RETOOL_SDK_ID: resourceName,
     RETOOL_SDK_HOST: origin,
     RETOOL_SDK_API_TOKEN: rpcAccessToken,
+    RETOOL_SDK_ENV: resourceEnvironment,
   };
   saveEnvVariablesToFile(envVariables, destinationPath + "/.env");
 
@@ -97,6 +126,17 @@ const handler = async function (argv: any) {
     }/queryLibrary/${queryResult.id}`
   );
 };
+
+function validateResourceByEnv(resourceByEnv: ResourceByEnv) {
+  if (Object.keys(resourceByEnv).length === 0) {
+    console.log("Error finding resource by that id.");
+    process.exit(1);
+  }
+  if (Object.values(resourceByEnv)[0].type !== "retoolSdk") {
+    console.log("Resource found is not of expected type");
+    process.exit(1);
+  }
+}
 
 const commandModule: CommandModule = {
   command,
