@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import ora from "ora";
 import { CommandModule } from "yargs";
 
 import { getAndVerifyCredentials } from "../utils/credentials";
@@ -74,9 +75,9 @@ const handler = async function (argv: any) {
     },
   ])) as { destinationPath: string };
 
-  const queryResult = await createPlaygroundQuery(resourceId, credentials);
+  const spinner = ora("Creating app").start();
 
-  console.log("Creating app...");
+  const queryResult = await createPlaygroundQuery(resourceId, credentials);
 
   const urlPath =
     "https://api.github.com/repos/tryretool/retool-examples/contents/" +
@@ -91,6 +92,7 @@ const handler = async function (argv: any) {
   };
   saveEnvVariablesToFile(envVariables, destinationPath + "/.env");
 
+  spinner.stop();
   console.log("Done! 🎉\n");
 
   console.log("To run your app, run the following commands:");
@@ -98,7 +100,7 @@ const handler = async function (argv: any) {
   console.log("yarn install");
   console.log("yarn example");
   console.log(
-    `${chalk.bold("Test example query in browser:")} ${
+    `${chalk.bold("Run example query in browser:")} ${
       credentials.origin
     }/queryLibrary/${queryResult.id}`
   );
