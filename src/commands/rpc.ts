@@ -15,7 +15,7 @@ const inquirer = require("inquirer");
 const command = "rpc";
 const describe = "Interface with Retool RPC.";
 const builder = {};
-const handler = async function (argv: any) {
+const handler = async function () {
   const credentials = getAndVerifyCredentials();
   const origin = credentials.origin;
 

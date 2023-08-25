@@ -8,6 +8,7 @@ require("yargs/yargs")(process.argv.slice(2))
       return commandModule.default;
     },
   })
+  .parserConfiguration({ "boolean-negation": false })
   .demandCommand()
   .strict()
   .usage(

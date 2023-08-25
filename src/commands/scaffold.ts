@@ -48,6 +48,11 @@ const builder: CommandModule["builder"] = {
     retool scaffold -f <path-to-csv>`,
     type: "string",
   },
+  "no-workflow": {
+    describe: `Modifier to avoid generating Workflow. Usage:
+    retool scaffold --no-workflow`,
+    type: "boolean",
+  },
 };
 const handler = async function (argv: any) {
   const credentials = await getAndVerifyCredentialsWithRetoolDB();
@@ -70,6 +75,7 @@ const handler = async function (argv: any) {
     }
 
     //TODO: Could be parallelized.
+    //TODO: Verify existence before trying to delete.
     await deleteTable(tableName, credentials, false);
     await deleteWorkflow(workflowName, credentials, false);
     await deleteApp(`${tableName} App`, credentials, false);
@@ -83,10 +89,12 @@ const handler = async function (argv: any) {
       false
     );
 
-    console.log("\n");
-    await generateCRUDWorkflow(tableName, credentials);
-    console.log("\n");
+    if (!argv["no-workflow"]) {
+      console.log("\n");
+      await generateCRUDWorkflow(tableName, credentials);
+    }
 
+    console.log("\n");
     const searchColumnName = colNames.length > 0 ? colNames[0] : "id";
     await createAppForTable(
       `${tableName} App`,
@@ -110,13 +118,13 @@ const handler = async function (argv: any) {
     await createTable(tableName, colNames, undefined, credentials, false);
     // Fire and forget
     void insertSampleData(tableName, credentials);
-    console.log(
-      `Generate mock data with: \`retool db --gendata ${tableName}\``
-    );
-    console.log("\n");
-    await generateCRUDWorkflow(tableName, credentials);
-    console.log("\n");
 
+    if (!argv["no-workflow"]) {
+      console.log("\n");
+      await generateCRUDWorkflow(tableName, credentials);
+    }
+
+    console.log("\n");
     const searchColumnName = colNames.length > 0 ? colNames[0] : "id";
     await createAppForTable(
       `${tableName} App`,
