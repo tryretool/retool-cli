@@ -179,7 +179,9 @@ export async function createTable(
     console.log(createTableResult.data);
     process.exit(1);
   } else {
-    console.log("Successfully created a table in RetoolDB. 🎉");
+    console.log(
+      `Successfully created a table named ${tableName} in RetoolDB. 🎉`
+    );
     if (printConnectionString) {
       console.log("");
     }

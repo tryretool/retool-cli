@@ -46,7 +46,7 @@ const builder: CommandModule["builder"] = {
     alias: "f",
     describe: `Create a table, Workflow and App from a CSV file. Usage:
     retool scaffold -f <path-to-csv>`,
-    type: "string",
+    type: "array",
   },
   "no-workflow": {
     describe: `Modifier to avoid generating Workflow. Usage:
@@ -83,25 +83,30 @@ const handler = async function (argv: any) {
 
   // Handle `retool scaffold -f <path-to-csv>`
   else if (argv.f) {
-    const { tableName, colNames } = await createTableFromCSV(
-      argv.f,
-      credentials,
-      false
-    );
+    const csvFileNames = argv.f;
 
-    if (!argv["no-workflow"]) {
+    for (const csvFileName of csvFileNames) {
+      const { tableName, colNames } = await createTableFromCSV(
+        csvFileName,
+        credentials,
+        false
+      );
+
+      if (!argv["no-workflow"]) {
+        console.log("\n");
+        await generateCRUDWorkflow(tableName, credentials);
+      }
+
       console.log("\n");
-      await generateCRUDWorkflow(tableName, credentials);
+      const searchColumnName = colNames.length > 0 ? colNames[0] : "id";
+      await createAppForTable(
+        `${tableName} App`,
+        tableName,
+        searchColumnName,
+        credentials
+      );
+      console.log("");
     }
-
-    console.log("\n");
-    const searchColumnName = colNames.length > 0 ? colNames[0] : "id";
-    await createAppForTable(
-      `${tableName} App`,
-      tableName,
-      searchColumnName,
-      credentials
-    );
   }
 
   // Handle `retool scaffold`
