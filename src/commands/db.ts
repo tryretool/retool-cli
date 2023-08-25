@@ -1,7 +1,7 @@
 import untildify from "untildify";
 import { CommandModule } from "yargs";
 
-import { getAndVerifyFullCredentials } from "../utils/credentials";
+import { getAndVerifyCredentialsWithRetoolDB } from "../utils/credentials";
 import { parseCSV } from "../utils/csv";
 import { generateData, promptForDataType } from "../utils/faker";
 import { getRequest, postRequest } from "../utils/networking";
@@ -62,7 +62,7 @@ const builder: CommandModule["builder"] = {
   },
 };
 const handler = async function (argv: any) {
-  const credentials = await getAndVerifyFullCredentials();
+  const credentials = await getAndVerifyCredentialsWithRetoolDB();
 
   // Handle `retool db --upload <path-to-csv>`
   if (argv.upload) {

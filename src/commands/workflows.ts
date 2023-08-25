@@ -1,6 +1,6 @@
 import { CommandModule } from "yargs";
 
-import { getAndVerifyFullCredentials } from "../utils/credentials";
+import { getAndVerifyCredentialsWithRetoolDB } from "../utils/credentials";
 import { dateOptions } from "../utils/date";
 import {
   Workflow,
@@ -29,7 +29,7 @@ const builder: CommandModule["builder"] = {
   },
 };
 const handler = async function (argv: any) {
-  const credentials = await getAndVerifyFullCredentials();
+  const credentials = await getAndVerifyCredentialsWithRetoolDB();
 
   // Handle `retool workflows -l`
   if (argv.list || argv.r) {
