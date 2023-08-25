@@ -1,8 +1,6 @@
-import untildify from "untildify";
 import { CommandModule } from "yargs";
 
 import { getAndVerifyCredentialsWithRetoolDB } from "../utils/credentials";
-import { parseCSV } from "../utils/csv";
 import { generateData, promptForDataType } from "../utils/faker";
 import { getRequest, postRequest } from "../utils/networking";
 import {
@@ -10,15 +8,13 @@ import {
   collectColumnNames,
   collectTableName,
   createTable,
+  createTableFromCSV,
   deleteTable,
   fetchAllTables,
   generateDataWithGPT,
   parseDBData,
   verifyTableExists,
 } from "../utils/table";
-
-const fs = require("fs");
-const path = require("path");
 
 const chalk = require("chalk");
 const inquirer = require("inquirer");
@@ -66,43 +62,7 @@ const handler = async function (argv: any) {
 
   // Handle `retool db --upload <path-to-csv>`
   if (argv.upload) {
-    const filePath = untildify(argv.upload);
-    // Verify file exists, is a csv, and is < 15MB.
-    if (
-      !fs.existsSync(filePath) ||
-      !filePath.endsWith(".csv") ||
-      fs.statSync(filePath).size > 18000000
-    ) {
-      console.log("The file does not exist, is not a CSV, or is > 18MB.");
-      return;
-    }
-
-    //Default to csv filename if no table name is provided.
-    let tableName = path.basename(filePath).slice(0, -4);
-    const { inputName } = await inquirer.prompt([
-      {
-        name: "inputName",
-        message: "Table name? If blank, defaults to CSV filename.",
-        type: "input",
-      },
-    ]);
-    if (inputName.length > 0) {
-      tableName = inputName;
-    }
-    // Remove spaces from table name.
-    tableName = tableName.replace(/\s/g, "_");
-
-    const spinner = ora("Parsing CSV").start();
-    const parseResult = await parseCSV(filePath);
-    spinner.stop();
-    if (!parseResult.success) {
-      console.log("Failed to parse CSV, error:");
-      console.error(parseResult.error);
-      return;
-    }
-
-    const { headers, rows } = parseResult;
-    await createTable(tableName, headers, rows, credentials, true);
+    await createTableFromCSV(argv.upload, credentials, true);
   }
 
   // Handle `retool db --create`

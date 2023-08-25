@@ -10,6 +10,7 @@ import {
   collectColumnNames,
   collectTableName,
   createTable,
+  createTableFromCSV,
   deleteTable,
   generateDataWithGPT,
 } from "../utils/table";
@@ -41,6 +42,12 @@ const builder: CommandModule["builder"] = {
     type: "string",
     nargs: 1,
   },
+  "from-csv": {
+    alias: "f",
+    describe: `Create a table, Workflow and App from a CSV file. Usage:
+    retool scaffold -f <path-to-csv>`,
+    type: "string",
+  },
 };
 const handler = async function (argv: any) {
   const credentials = await getAndVerifyCredentialsWithRetoolDB();
@@ -66,6 +73,27 @@ const handler = async function (argv: any) {
     await deleteTable(tableName, credentials, false);
     await deleteWorkflow(workflowName, credentials, false);
     await deleteApp(`${tableName} App`, credentials, false);
+  }
+
+  // Handle `retool scaffold -f <path-to-csv>`
+  else if (argv.f) {
+    const { tableName, colNames } = await createTableFromCSV(
+      argv.f,
+      credentials,
+      false
+    );
+
+    console.log("\n");
+    await generateCRUDWorkflow(tableName, credentials);
+    console.log("\n");
+
+    const searchColumnName = colNames.length > 0 ? colNames[0] : "id";
+    await createAppForTable(
+      `${tableName} App`,
+      tableName,
+      searchColumnName,
+      credentials
+    );
   }
 
   // Handle `retool scaffold`

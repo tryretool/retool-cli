@@ -1,9 +1,14 @@
 import chalk from "chalk";
 import ora from "ora";
+import untildify from "untildify";
 
 import { logConnectionStringDetails } from "./connectionString";
 import { Credentials } from "./credentials";
 import { getRequest, postRequest } from "./networking";
+import { parseCSV } from "../utils/csv";
+
+const fs = require("fs");
+const path = require("path");
 
 const inquirer = require("inquirer");
 
@@ -187,6 +192,63 @@ export async function createTable(
       await logConnectionStringDetails();
     }
   }
+}
+
+export async function createTableFromCSV(
+  csvFilePath: string,
+  credentials: Credentials,
+  printConnectionString: boolean
+): Promise<{
+  tableName: string;
+  colNames: string[];
+}> {
+  const filePath = untildify(csvFilePath);
+  // Verify file exists, is a csv, and is < 18MB.
+  if (
+    !fs.existsSync(filePath) ||
+    !filePath.endsWith(".csv") ||
+    fs.statSync(filePath).size > 18000000
+  ) {
+    console.log("The file does not exist, is not a CSV, or is > 18MB.");
+    process.exit(1);
+  }
+
+  //Default to csv filename if no table name is provided.
+  let tableName = path.basename(filePath).slice(0, -4);
+  const { inputName } = await inquirer.prompt([
+    {
+      name: "inputName",
+      message: "Table name? If blank, defaults to CSV filename.",
+      type: "input",
+    },
+  ]);
+  if (inputName.length > 0) {
+    tableName = inputName;
+  }
+  // Remove spaces from table name.
+  tableName = tableName.replace(/\s/g, "_");
+
+  const spinner = ora("Parsing CSV").start();
+  const parseResult = await parseCSV(filePath);
+  spinner.stop();
+  if (!parseResult.success) {
+    console.log("Failed to parse CSV, error:");
+    console.error(parseResult.error);
+    process.exit(1);
+  }
+
+  const { headers, rows } = parseResult;
+  await createTable(
+    tableName,
+    headers,
+    rows,
+    credentials,
+    printConnectionString
+  );
+  return {
+    tableName,
+    colNames: headers,
+  };
 }
 
 // data param is in format:
