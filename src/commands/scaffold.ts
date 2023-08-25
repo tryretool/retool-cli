@@ -89,6 +89,7 @@ const handler = async function (argv: any) {
       const { tableName, colNames } = await createTableFromCSV(
         csvFileName,
         credentials,
+        false,
         false
       );
 

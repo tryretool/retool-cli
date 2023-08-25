@@ -61,7 +61,7 @@ const handler = async function (argv: any) {
 
   // Handle `retool db --upload <path-to-csv>`
   if (argv.upload) {
-    await createTableFromCSV(argv.upload, credentials, true);
+    await createTableFromCSV(argv.upload, credentials, true, true);
   }
 
   // Handle `retool db --create`

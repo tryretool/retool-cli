@@ -199,7 +199,8 @@ export async function createTable(
 export async function createTableFromCSV(
   csvFilePath: string,
   credentials: Credentials,
-  printConnectionString: boolean
+  printConnectionString: boolean,
+  promptForTableName: boolean
 ): Promise<{
   tableName: string;
   colNames: string[];
@@ -217,15 +218,17 @@ export async function createTableFromCSV(
 
   //Default to csv filename if no table name is provided.
   let tableName = path.basename(filePath).slice(0, -4);
-  const { inputName } = await inquirer.prompt([
-    {
-      name: "inputName",
-      message: "Table name? If blank, defaults to CSV filename.",
-      type: "input",
-    },
-  ]);
-  if (inputName.length > 0) {
-    tableName = inputName;
+  if (promptForTableName) {
+    const { inputName } = await inquirer.prompt([
+      {
+        name: "inputName",
+        message: "Table name? If blank, defaults to CSV filename.",
+        type: "input",
+      },
+    ]);
+    if (inputName.length > 0) {
+      tableName = inputName;
+    }
   }
   // Remove spaces from table name.
   tableName = tableName.replace(/\s/g, "_");
