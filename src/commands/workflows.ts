@@ -24,8 +24,7 @@ const builder: CommandModule["builder"] = {
     alias: "d",
     describe: `Delete a workflow. Usage:
       retool workflows -d <workflow-name>`,
-    type: "string",
-    nargs: 1,
+    type: "array",
   },
 };
 const handler = async function (argv: any) {
@@ -100,7 +99,10 @@ const handler = async function (argv: any) {
 
   // Handle `retool workflows -d <workflow-name>`
   else if (argv.delete) {
-    await deleteWorkflow(argv.delete, credentials, true);
+    const workflowNames = argv.delete;
+    for (const workflowName of workflowNames) {
+      await deleteWorkflow(workflowName, credentials, true);
+    }
   }
 
   // No flag specified.

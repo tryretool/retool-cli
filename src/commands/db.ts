@@ -42,8 +42,7 @@ const builder: CommandModule["builder"] = {
     alias: "d",
     describe: `Delete a table. Usage:
     retool db -d <table-name>`,
-    type: "string",
-    nargs: 1,
+    type: "array",
   },
   gendata: {
     alias: "g",
@@ -86,7 +85,10 @@ const handler = async function (argv: any) {
 
   // Handle `retool db --delete <table-name>`
   else if (argv.delete) {
-    await deleteTable(argv.delete, credentials, true);
+    const tableNames = argv.delete;
+    for (const tableName of tableNames) {
+      await deleteTable(tableName, credentials, true);
+    }
   }
 
   // Handle `retool db --gendata <table-name>`
