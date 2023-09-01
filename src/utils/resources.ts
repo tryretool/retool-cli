@@ -1,5 +1,5 @@
 import { Credentials } from "./credentials";
-import { getRequest } from "./networking";
+import { getRequest, postRequest } from "./networking";
 
 export type ResourceByEnv = Record<string, Resource>;
 
@@ -30,5 +30,38 @@ export async function getResourceByName(
     process.exit(1);
   } else {
     return resourceByEnv;
+  }
+}
+
+export async function createResource({
+  resourceType,
+  credentials,
+  displayName,
+  resourceFolderId,
+  resourceOptions,
+}: {
+  resourceType: string;
+  credentials: Credentials;
+  displayName?: string;
+  resourceFolderId?: number;
+  resourceOptions?: Record<string, any>;
+}): Promise<Resource> {
+  const createResourceResult = await postRequest(
+    `${credentials.origin}/api/resources/`,
+    {
+      type: resourceType,
+      displayName,
+      resourceFolderId,
+      options: resourceOptions ? resourceOptions : {},
+    },
+    false,
+    {},
+    false
+  );
+  const resource = createResourceResult.data;
+  if (!resource) {
+    throw new Error("Error creating resource.");
+  } else {
+    return resource;
   }
 }

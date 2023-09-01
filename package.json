@@ -39,6 +39,7 @@
     "open": "^7.4.2",
     "ora": "^5.4.1",
     "puppeteer": "^20.8.0",
+    "tar": "^6.1.15",
     "untildify": "^4.0.0",
     "yargs": "^17.7.2"
   },
@@ -48,6 +49,7 @@
     "@types/intl": "^1.2.0",
     "@types/jest": "^29.5.3",
     "@types/node": "^20.2.5",
+    "@types/tar": "^6.1.5",
     "@types/yargs": "^17.0.24",
     "@typescript-eslint/eslint-plugin": "^5.61.0",
     "@typescript-eslint/parser": "^5.61.0",

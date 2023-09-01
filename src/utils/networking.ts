@@ -6,10 +6,11 @@ export async function postRequest(
   url: string,
   body: any,
   exitOnFailure = true,
-  headers = {}
+  headers = {},
+  shouldHandleError = true
 ) {
-  try {
-    const response = await axios.post(
+  if (!shouldHandleError) {
+    return await axios.post(
       url,
       {
         ...body,
@@ -20,9 +21,23 @@ export async function postRequest(
         },
       }
     );
-    return response;
-  } catch (error: any) {
-    handleError(error, exitOnFailure, url);
+  } else {
+    try {
+      const response = await axios.post(
+        url,
+        {
+          ...body,
+        },
+        {
+          headers: {
+            ...headers,
+          },
+        }
+      );
+      return response;
+    } catch (error: any) {
+      handleError(error, exitOnFailure, url);
+    }
   }
 }
 
