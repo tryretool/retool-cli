@@ -12,6 +12,7 @@ import {
 } from "../utils/fileSave";
 import { createPlaygroundQuery } from "../utils/playgroundQuery";
 import { createResource } from "../utils/resources";
+import { logDAU } from "../utils/telemetry";
 
 const inquirer = require("inquirer");
 
@@ -21,6 +22,8 @@ const builder = {};
 const handler = async function () {
   const credentials = getAndVerifyCredentials();
   const origin = credentials.origin;
+  // fire and forget
+  void logDAU(credentials);
 
   console.log(
     `We'll be showcasing RetoolRPC -- a simple way to connect to Retool from your local codebase. The three things you'll need are: `

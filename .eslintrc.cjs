@@ -25,6 +25,7 @@ module.exports = {
         "@typescript-eslint/no-unsafe-argument": "off",
         "@typescript-eslint/restrict-template-expressions": "off",
         "@typescript-eslint/no-floating-promises": "error",
+        "@typescript-eslint/ban-ts-comment": "off",
         "import/no-unresolved": "error",
         "sort-imports": [
           "error",

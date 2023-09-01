@@ -2,6 +2,7 @@ import { CommandModule } from "yargs";
 
 import { getAndVerifyCredentialsWithRetoolDB } from "../utils/credentials";
 import { dateOptions } from "../utils/date";
+import { logDAU } from "../utils/telemetry";
 import {
   Workflow,
   deleteWorkflow,
@@ -29,6 +30,8 @@ const builder: CommandModule["builder"] = {
 };
 const handler = async function (argv: any) {
   const credentials = await getAndVerifyCredentialsWithRetoolDB();
+  // fire and forget
+  void logDAU(credentials);
 
   // Handle `retool workflows -l`
   if (argv.list || argv.r) {

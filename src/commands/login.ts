@@ -9,6 +9,7 @@ import {
   persistCredentials,
 } from "../utils/credentials";
 import { getRequest, postRequest } from "../utils/networking";
+import { logDAU } from "../utils/telemetry";
 
 const path = require("path");
 
@@ -71,6 +72,8 @@ const handler = async function (argv: any) {
   } else if (loginMethod === "localhost") {
     await loginViaEmail(true);
   }
+
+  await logDAU();
 };
 
 // Ask the user to input their email and password.
@@ -136,6 +139,7 @@ async function loginViaEmail(localhost = false) {
       firstName: authResponse.data.user?.firstName,
       lastName: authResponse.data.user?.lastName,
       email: authResponse.data.user?.email,
+      telemetryEnabled: true,
     });
     logSuccess();
   } else {
@@ -181,6 +185,7 @@ async function loginViaBrowser() {
       firstName: userRes.data.user?.firstName,
       lastName: userRes.data.user?.lastName,
       email: userRes.data.user?.email,
+      telemetryEnabled: true,
     });
     logSuccess();
     res.sendFile(path.join(__dirname, "../loginPages/loginSuccess.html"));

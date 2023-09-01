@@ -4,6 +4,7 @@ import { logSuccess } from "./login";
 import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
 import { doCredentialsExist, persistCredentials } from "../utils/credentials";
 import { getRequest, postRequest } from "../utils/networking";
+import { logDAU } from "../utils/telemetry";
 import { isEmailValid } from "../utils/validation";
 
 const axios = require("axios");
@@ -96,8 +97,10 @@ const handler = async function (argv: any) {
     firstName: userRes.data.user?.firstName,
     lastName: userRes.data.user?.lastName,
     email: userRes.data.user?.email,
+    telemetryEnabled: true,
   });
   logSuccess();
+  await logDAU();
 };
 
 async function collectEmail(): Promise<string | undefined> {

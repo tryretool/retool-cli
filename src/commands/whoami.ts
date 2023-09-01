@@ -1,6 +1,7 @@
 import { ArgumentsCamelCase, CommandModule } from "yargs";
 
 import { getCredentials } from "../utils/credentials";
+import { logDAU } from "../utils/telemetry";
 
 const chalk = require("chalk");
 
@@ -14,6 +15,9 @@ const builder = {
 };
 const handler = function (argv: ArgumentsCamelCase) {
   const credentials = getCredentials();
+  // fire and forget
+  void logDAU(credentials);
+
   if (credentials) {
     if (
       !process.env.DEBUG &&

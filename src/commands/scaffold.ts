@@ -15,6 +15,7 @@ import {
   generateDataWithGPT,
 } from "../utils/table";
 import type { DBInfoPayload } from "../utils/table";
+import { logDAU } from "../utils/telemetry";
 import { deleteWorkflow, generateCRUDWorkflow } from "../utils/workflows";
 
 const inquirer = require("inquirer");
@@ -56,6 +57,8 @@ const builder: CommandModule["builder"] = {
 };
 const handler = async function (argv: any) {
   const credentials = await getAndVerifyCredentialsWithRetoolDB();
+  // fire and forget
+  void logDAU(credentials);
 
   // Handle `retool scaffold -d <db_name>`
   if (argv.delete) {

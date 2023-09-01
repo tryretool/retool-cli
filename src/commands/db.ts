@@ -15,6 +15,7 @@ import {
   parseDBData,
   verifyTableExists,
 } from "../utils/table";
+import { logDAU } from "../utils/telemetry";
 
 const chalk = require("chalk");
 const inquirer = require("inquirer");
@@ -58,6 +59,8 @@ const builder: CommandModule["builder"] = {
 };
 const handler = async function (argv: any) {
   const credentials = await getAndVerifyCredentialsWithRetoolDB();
+  // fire and forget
+  void logDAU(credentials);
 
   // Handle `retool db --upload <path-to-csv>`
   if (argv.upload) {

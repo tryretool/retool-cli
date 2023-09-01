@@ -27,6 +27,8 @@ export type Credentials = {
   firstName?: string; // The next 3 properties are sometimes fetched during login.
   lastName?: string;
   email?: string;
+  telemetryEnabled: boolean; // The next 2 properties control telemetry.
+  telemetryLastSent?: number;
 };
 
 // Legacy way of getting credentials.
@@ -74,6 +76,7 @@ export async function askForCookies() {
     origin,
     xsrf,
     accessToken,
+    telemetryEnabled: true,
   });
   console.log("Successfully saved credentials.");
 }

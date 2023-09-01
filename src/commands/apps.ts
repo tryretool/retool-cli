@@ -15,6 +15,7 @@ import {
   fetchTableInfo,
   verifyTableExists,
 } from "../utils/table";
+import { logDAU } from "../utils/telemetry";
 
 const command = "apps";
 const describe = "Interface with Retool Apps.";
@@ -45,6 +46,8 @@ const builder: CommandModule["builder"] = {
 };
 const handler = async function (argv: any) {
   const credentials = await getAndVerifyCredentialsWithRetoolDB();
+  // fire and forget
+  void logDAU(credentials);
 
   // Handle `retool apps --list [folder-name]`
   if (argv.list || argv.r) {

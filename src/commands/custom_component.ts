@@ -4,6 +4,8 @@ import util from "util";
 import ora from "ora";
 import { CommandModule } from "yargs";
 
+import { logDAU } from "../utils/telemetry";
+
 const exec = util.promisify(_exec);
 
 const command: CommandModule["command"] = "custom-component";
@@ -16,6 +18,9 @@ const builder: CommandModule["builder"] = {
   },
 };
 const handler = async function (argv: any) {
+  // fire and forget
+  void logDAU();
+
   if (argv.clone) {
     const spinner = ora("Scaffolding a new custom component").start();
     await exec(
