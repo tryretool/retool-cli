@@ -30,7 +30,10 @@ export async function createPlaygroundQuery(
       description: "",
       shared: false,
       resourceId,
-      data: {},
+      data: {
+        // Set default querytimeout to 10 seconds
+        queryTimeout: "10000",
+      },
     }
   );
 
