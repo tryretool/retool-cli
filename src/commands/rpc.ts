@@ -1,7 +1,6 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 
-import chalk from "chalk";
 import { format } from "date-fns";
 import ora from "ora";
 import { CommandModule } from "yargs";
@@ -22,26 +21,27 @@ const command = "rpc";
 const describe = "Interface with Retool RPC.";
 const builder = {};
 const handler = async function () {
-  const credentials = getAndVerifyCredentials();
+  const credentials = await getAndVerifyCredentials();
   const origin = credentials.origin;
   // fire and forget
   void logDAU(credentials);
 
   console.log(
-    `We'll be showcasing RetoolRPC -- a simple way to connect to Retool from your local codebase. The three things you'll need are: `
+    `\nRetoolRPC is a way to connect to Retool from your local codebase.\n `
   );
+  console.log(`The three things you'll need are:`);
   console.log(
-    `1. An RPC resource on Retool (we'll create one for you automatically)`
+    `1. An RPC resource on Retool (we'll create one as a part of this)`
   );
   console.log(`2. An access token to connect to Retool`);
-  console.log(`3. A running server that executes your code on Retool\n`);
-  console.log("To learn more about RetoolRPC, check out our docs: <DOCS LINK>");
-  console.log("\nLet's get started! 🚀\n");
+  console.log(`3. A running server that executes your local code on Retool\n`);
+  console.log("To learn more about RetoolRPC, check out our docs:");
+  console.log("<DOCS LINK>\n");
 
   let resourceName = "";
   let resourceId = 0;
 
-  await inquirer.prompt([
+  const { resourceDisplayName } = (await inquirer.prompt([
     {
       name: "resourceDisplayName",
       message: "What would you like the name of your RetoolRPC resource to be?",
@@ -69,21 +69,25 @@ const handler = async function () {
         }
       },
     },
-  ]);
+  ])) as { resourceDisplayName: string };
 
   console.log(
-    `Excellent choice! We've created resource ${resourceName} with that name. Now we'll need an access token.\n`
+    `'${resourceDisplayName}' resource was created with id ${resourceName}.\n`
   );
+  console.log(
+    `Next, we'll need an RPC access token. You can create a new one here:`
+  );
+  console.log(`${origin}/settings/api\n`);
 
   const { rpcAccessToken } = (await inquirer.prompt([
     {
       name: "rpcAccessToken",
-      message: `Please enter an RPC access token. You can add a new one here: ${origin}/settings/api`,
+      message: `Enter an RPC access token.`,
       type: "password",
       validate: async (rpcAccessToken: string) => {
         try {
           const validateResourceAccess = await postRequest(
-            `${credentials.origin}/api/v1/retoolsdk/validateResourceAccess`,
+            `${origin}/api/v1/retoolsdk/validateResourceAccess`,
             {
               resourceId: resourceName,
             },
@@ -103,21 +107,9 @@ const handler = async function () {
       },
     },
   ])) as { rpcAccessToken: string };
+  console.log();
 
-  const { languageType } = (await inquirer.prompt([
-    {
-      name: "languageType",
-      message:
-        "Which of the following languages would you like to use for your local codebase?",
-      type: "list",
-      choices: [
-        {
-          name: "Typescript!",
-          value: "typescript",
-        },
-      ],
-    },
-  ])) as { languageType: string };
+  const languageType = "typescript";
 
   const { destinationPath } = (await inquirer.prompt([
     {
@@ -130,7 +122,7 @@ const handler = async function () {
 
   const githubUrl =
     "https://api.github.com/repos/tryretool/retool-examples/tarball/main";
-  const subfolderPath = "hello_world/" + languageType;
+  const subfolderPath = "rpc/" + languageType;
   await downloadGithubSubfolder(githubUrl, subfolderPath, destinationPath);
 
   const spinner = ora(
@@ -150,19 +142,17 @@ const handler = async function () {
 
   spinner.stop();
 
-  console.log("We've created your starter code to connect to Retool! 🎉\n");
-
   console.log(
-    `Your local code is located at ${destinationPath}/src/index.ts. For Retool to interact with your code, start the server by completing the following steps:`
+    `\nTo help you get started, we've added starter code for you to connect to Retool. The code is located at ${destinationPath}/src/index.ts.\n`
   );
-  console.log(`1. cd ${destinationPath}`);
-  console.log("2. yarn example\n");
-
   console.log(
-    `${chalk.bold(
-      "Once your server is running, run the following query in Retool to see how it interacts with your local codebase:"
-    )} ${credentials.origin}/queryLibrary/${queryResult.id}`
+    `For Retool to interact with your code, start the server by completing the following steps:`
   );
+  console.log(`cd ${destinationPath} && yarn example\n`);
+  console.log(
+    "Once your server is running, run the following query in Retool to see how it interacts with your local codebase:"
+  );
+  console.log(`${origin}/queryLibrary/${queryResult.id}\n`);
 };
 
 async function installYarnDependencies(destinationPath: string) {

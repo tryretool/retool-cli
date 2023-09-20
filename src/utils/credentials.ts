@@ -168,7 +168,7 @@ export async function getAndVerifyCredentialsWithRetoolDB() {
   return credentials;
 }
 
-export function getAndVerifyCredentials() {
+export async function getAndVerifyCredentials() {
   const spinner = ora("Verifying Retool credentials").start();
   const credentials = getCredentials();
   if (!credentials) {
@@ -180,6 +180,13 @@ export function getAndVerifyCredentials() {
   }
   axios.defaults.headers["x-xsrf-token"] = credentials.xsrf;
   axios.defaults.headers.cookie = `accessToken=${credentials.accessToken};`;
+  try {
+    await getRequest(`${credentials.origin}/api/checkHealth`, false);
+  } catch (error: any) {
+    spinner.stop();
+    console.log("Error: Credentials are not valid. Please log in again.");
+    process.exit(1);
+  }
   spinner.stop();
   return credentials;
 }

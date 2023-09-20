@@ -18,8 +18,8 @@ const builder = {
   },
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const handler = function (argv: any) {
-  const credentials = getAndVerifyCredentials();
+const handler = async function (argv: any) {
+  const credentials = await getAndVerifyCredentials();
 
   if (argv.disable) {
     credentials.telemetryEnabled = false;
