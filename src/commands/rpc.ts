@@ -90,6 +90,7 @@ const handler = async function () {
             `${origin}/api/v1/retoolsdk/validateResourceAccess`,
             {
               resourceId: resourceName,
+              environmentName: "production",
             },
             false,
             {
