@@ -195,7 +195,9 @@ async function loginViaBrowser() {
 
   // Step 1: Open up the google SSO page in the browser.
   // Step 2: User accepts the SSO request.
-  open(`https://login.retool.com/googlelogin?retoolCliRedirect=true`);
+  open(
+    `https://login.retool.com/googlelogin?retoolCliRedirect=true&origin=login`
+  );
   // For local testing:
   // open("http://localhost:3000/googlelogin?retoolCliRedirect=true");
   // open("https://login.retool-qa.com/googlelogin?retoolCliRedirect=true");
