@@ -4,7 +4,7 @@ A simple command line interface for [Retool](https://retool.com/). Run `retool s
 
 Open an issue in this repository for feature requests. PRs welcome!
 
-![Screenshot of the retool help command](https://d3399nw8s4ngfo.cloudfront.net/docs/4a9a2517b9811373030d07a13ff46ef0-1800.webp)
+![Screenshot of the retool help command](https://i.imgur.com/ojYlw0i.png)
 
 ## Installation & Updating
 
