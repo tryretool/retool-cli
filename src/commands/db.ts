@@ -36,8 +36,7 @@ const builder: CommandModule["builder"] = {
     alias: "u",
     describe: `Upload a new table from a CSV file. Usage:
     retool db -u <path-to-csv>`,
-    type: "string",
-    nargs: 1,
+    type: "array",
   },
   delete: {
     alias: "d",
@@ -64,7 +63,10 @@ const handler = async function (argv: any) {
 
   // Handle `retool db --upload <path-to-csv>`
   if (argv.upload) {
-    await createTableFromCSV(argv.upload, credentials, true, true);
+    const csvFileNames = argv.upload;
+    for (const csvFileName of csvFileNames) {
+      await createTableFromCSV(csvFileName, credentials, true, true);
+    }
   }
 
   // Handle `retool db --create`
