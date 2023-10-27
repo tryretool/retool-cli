@@ -28,7 +28,7 @@ const handler = async function () {
 
   console.log("\n┛");
   console.log(
-    ` Retool RPC connects Mike to your codebase, allowing you to register functions to execute from your Retool apps.\n`
+    ` Retool RPC connects Retool to your codebase, allowing you to register functions to execute from your Retool apps.\n`
   );
   console.log(`To start using RetoolRPC, we'll run through three steps:`);
   console.log(
@@ -127,7 +127,7 @@ const handler = async function () {
     {
       name: "languageType",
       message:
-        "Which of the following languages would you like to use for your local codebase?",
+        "Which of the following languages would you like to use for your local RPC server?",
       type: "list",
       choices: [
         {
