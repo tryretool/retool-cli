@@ -15,8 +15,12 @@ export async function downloadGithubSubfolder(
   destinationPath: string
 ) {
   try {
-    const url = `${githubUrl}?path=${subfolderPath}`;
-    const response = await axios.get(url, { responseType: "arraybuffer" });
+    const response = await axios.get(githubUrl, {
+      responseType: "arraybuffer",
+    });
+
+    // Temporary directory to hold the extracted repository
+    const tempDirPath = "./temp";
 
     // Delete the directory if it already exists
     if (fs.existsSync(destinationPath)) {
@@ -35,18 +39,35 @@ export async function downloadGithubSubfolder(
       await fs.promises.rm(destinationPath, { recursive: true });
     }
 
+    fs.mkdirSync(tempDirPath, { recursive: true });
     fs.mkdirSync(destinationPath, { recursive: true });
 
-    const tarballPath = path.join(destinationPath, "tarball.tar.gz");
+    const tarballPath = path.join(tempDirPath, "tarball.tar.gz");
     fs.writeFileSync(tarballPath, response.data);
 
     await tar.x({
       file: tarballPath,
-      cwd: destinationPath,
-      strip: subfolderPath.split("/").length + 1, // remove the top-level directories
+      cwd: tempDirPath,
+      strip: 1, // remove the top-level directories
     });
 
+    // Copy the specific subfolder to the destination path
+    const sourceSubfolder = path.join(tempDirPath, subfolderPath);
+    const destSubfolder = destinationPath;
+    if (fs.existsSync(sourceSubfolder)) {
+      fs.renameSync(sourceSubfolder, destSubfolder);
+    } else {
+      throw new Error(
+        `Subfolder "${subfolderPath}" does not exist in the repository.`
+      );
+    }
+
     fs.unlinkSync(tarballPath);
+    fs.rm(tempDirPath, { recursive: true, force: true }, (err) => {
+      if (err) {
+        console.error("Error removing temporary directory:", err);
+      }
+    });
   } catch (error: any) {
     console.error("Error:", error.message);
   }
