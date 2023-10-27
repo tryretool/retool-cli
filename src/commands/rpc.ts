@@ -1,5 +1,4 @@
-import { exec } from "child_process";
-import { promisify } from "util";
+import { execSync } from "child_process";
 
 import chalk from "chalk";
 import { format } from "date-fns";
@@ -124,7 +123,28 @@ const handler = async function () {
   ])) as { rpcAccessToken: string };
   console.log();
 
-  const languageType = "typescript";
+  const { languageType } = (await inquirer.prompt([
+    {
+      name: "languageType",
+      message:
+        "Which of the following languages would you like to use for your local RPC server?",
+      type: "list",
+      choices: [
+        {
+          name: "Typescript",
+          value: "typescript",
+        },
+        {
+          name: "Javascript",
+          value: "javascript",
+        },
+        {
+          name: "Python",
+          value: "python",
+        },
+      ],
+    },
+  ])) as { languageType: string };
 
   const { destinationPath } = (await inquirer.prompt([
     {
@@ -156,27 +176,54 @@ const handler = async function () {
   };
   saveEnvVariablesToFile(envVariables, destinationPath + "/.env");
 
-  await installYarnDependencies(destinationPath);
+  let runCommand = "";
+  let filePath = "";
+  if (languageType === "typescript" || languageType === "javascript") {
+    installYarnDependencies(destinationPath);
+    runCommand = "yarn example";
+    if (languageType === "typescript") {
+      filePath = "src/index.ts";
+    } else {
+      filePath = "src/index.js";
+    }
+  }
+  if (languageType === "python") {
+    installPoetryDependencies(destinationPath);
+    runCommand = "poetry run python src/example.py";
+    filePath = "src/example.py";
+  }
 
   spinner.stop();
 
   console.log(
-    `\nTo help you get started, we've added starter code that spins up a server for you to connect to Retool. The code is located at ${destinationPath}/src/index.ts.\n`
+    `\nTo help you get started, we've added starter code that spins up a server for you to connect to Retool. The code is located at ${destinationPath}/${filePath}.\n`
   );
   console.log(`Start your server by running the following command:`);
-  console.log(`${chalk.bold(`cd ${destinationPath} && yarn example\n`)}`);
+  console.log(`${chalk.bold(`cd ${destinationPath} && ${runCommand}\n`)}`);
   console.log(
     "Once your server is running, run the following query in Retool to see how it interacts with your local codebase:"
   );
   console.log(`${queryUrl}\n`);
 };
 
-async function installYarnDependencies(destinationPath: string) {
-  const executeCommand = promisify(exec);
+function installYarnDependencies(destinationPath: string) {
   try {
-    await executeCommand("yarn install", { cwd: destinationPath });
+    execSync(`cd ${destinationPath} && yarn install`, { stdio: "inherit" });
   } catch (error: any) {
-    console.error(`Error installing Yarn dependencies: ${error.message}`);
+    console.error(`Error installing dependencies: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+function installPoetryDependencies(destinationPath: string) {
+  try {
+    execSync(
+      `cd ${destinationPath} && curl -sSL https://install.python-poetry.org | python3 - && poetry install`,
+      { stdio: "inherit" }
+    );
+  } catch (error) {
+    console.error("Error installing dependencies:", error);
+    process.exit(1);
   }
 }
 
