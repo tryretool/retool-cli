@@ -3,6 +3,7 @@ import { CommandModule } from "yargs";
 import { getAndVerifyCredentialsWithRetoolDB } from "../utils/credentials";
 import { generateData, promptForDataType } from "../utils/faker";
 import { getRequest, postRequest } from "../utils/networking";
+import { getDataFromPostgres } from "../utils/postgres";
 import {
   DBInfoPayload,
   collectColumnNames,
@@ -44,6 +45,13 @@ const builder: CommandModule["builder"] = {
     retool db -d <table-name>`,
     type: "array",
   },
+  fromPostgres: {
+    alias: "f",
+    describe: `Create tables from a PostgreSQL database. Usage:
+    retool db -f <postgres-connection-string>`,
+    type: "string",
+    nargs: 1,
+  },
   gendata: {
     alias: "g",
     describe: `Generate data for a table interactively. Usage:
@@ -66,6 +74,23 @@ const handler = async function (argv: any) {
     const csvFileNames = argv.upload;
     for (const csvFileName of csvFileNames) {
       await createTableFromCSV(csvFileName, credentials, true, true);
+    }
+  }
+
+  // Handle `retool db --fromPostgres <postgres-connection-string>`
+  else if (argv.fromPostgres) {
+    const connectionString = argv.fromPostgres;
+    const data = await getDataFromPostgres(connectionString);
+    if (data) {
+      for (const table of data) {
+        await createTable(
+          table.name,
+          table.columns,
+          table.data,
+          credentials,
+          true
+        );
+      }
     }
   }
 

@@ -39,6 +39,7 @@
     "inquirer-tree-prompt": "^1.1.2",
     "open": "^7.4.2",
     "ora": "^5.4.1",
+    "pg": "^8.11.3",
     "puppeteer": "^20.8.0",
     "tar": "^6.1.15",
     "untildify": "^4.0.0",
