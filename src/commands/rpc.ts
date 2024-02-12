@@ -100,7 +100,7 @@ const handler = async function () {
       validate: async (rpcAccessToken: string) => {
         try {
           const validateResourceAccess = await postRequest(
-            `${origin}/api/v1/retoolsdk/validateResourceAccess`,
+            `${origin}/api/v1/retoolrpc/validateResourceAccess`,
             {
               resourceId: resourceName,
               environmentName: "production",
