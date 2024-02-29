@@ -3,6 +3,9 @@ import chalk from "chalk";
 import { Credentials } from "./credentials";
 import { getRequest, postRequest } from "./networking";
 
+const fs = require("fs");
+
+const axios = require("axios");
 const inquirer = require("inquirer");
 const ora = require("ora");
 
@@ -95,6 +98,43 @@ export async function createAppForTable(
   }
 }
 
+export async function exportApp(appName: string, credentials: Credentials) {
+  // Verify that the provided appName exists.
+  const { apps } = await getAppsAndFolders(credentials);
+  const app = apps?.filter((app) => {
+    if (app.name === appName) {
+      return app;
+    }
+  });
+  if (app?.length != 1) {
+    console.log(`0 or >1 Apps named ${appName} found. 😓`);
+    process.exit(1);
+  }
+
+  // Export the app.
+  const spinner = ora("Exporting App").start();
+  const response = await axios.post(
+    `${credentials.origin}/api/pages/uuids/${app[0].uuid}/export`,
+    {},
+    {
+      responseType: "stream",
+    }
+  );
+
+  // Write the response to a file.
+  try {
+    const filePath = `${appName}.json`;
+    const writer = fs.createWriteStream(filePath);
+    response.data.pipe(writer);
+  } catch (error) {
+    console.error("Error exporting app.");
+    process.exit(1);
+  }
+
+  spinner.stop();
+  console.log(`Exported ${appName} app. 📦`);
+}
+
 export async function deleteApp(
   appName: string,
   credentials: Credentials,
@@ -135,6 +175,7 @@ export async function deleteApp(
   console.log(`Deleted ${appName} app. 🗑️`);
 }
 
+// Fetch all apps (excluding apps in trash).
 export async function getAppsAndFolders(
   credentials: Credentials
 ): Promise<{ apps?: Array<App>; folders?: Array<Folder> }> {
@@ -146,8 +187,14 @@ export async function getAppsAndFolders(
 
   spinner.stop();
 
+  const apps: Array<App> | undefined = fetchAppsResponse?.data?.pages;
+  const folders: Array<Folder> | undefined = fetchAppsResponse?.data?.folders;
+  const trashFolderId = folders?.find(
+    (folder) => folder.name === "archive" && folder.systemFolder === true
+  )?.id;
+
   return {
-    apps: fetchAppsResponse?.data?.pages,
+    apps: apps?.filter((app) => app.folderId !== trashFolderId),
     folders: fetchAppsResponse?.data?.folders,
   };
 }

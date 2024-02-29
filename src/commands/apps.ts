@@ -5,6 +5,7 @@ import {
   createApp,
   createAppForTable,
   deleteApp,
+  exportApp,
   getAppsAndFolders,
 } from "../utils/apps";
 import type { App } from "../utils/apps";
@@ -40,7 +41,13 @@ const builder: CommandModule["builder"] = {
   delete: {
     alias: "d",
     describe: `Delete an app. Usage:
-      retool db -d <app-name>`,
+      retool apps -d <app-name>`,
+    type: "array",
+  },
+  export: {
+    alias: "e",
+    describe: `Export an app JSON. Usage:
+      retool apps -e <app-name>`,
     type: "array",
   },
 };
@@ -54,9 +61,6 @@ const handler = async function (argv: any) {
     let { apps, folders } = await getAppsAndFolders(credentials);
     const rootFolderId = folders?.find(
       (folder) => folder.name === "root" && folder.systemFolder === true
-    )?.id;
-    const trashFolderId = folders?.find(
-      (folder) => folder.name === "archive" && folder.systemFolder === true
     )?.id;
 
     // Only list apps in the specified folder.
@@ -78,7 +82,6 @@ const handler = async function (argv: any) {
     else {
       // Filter out undesired folders/apps.
       folders = folders?.filter((folder) => folder.systemFolder === false);
-      apps = apps?.filter((app) => app.folderId !== trashFolderId);
       if (!argv.r) {
         apps = apps?.filter((app) => app.folderId === rootFolderId);
       }
@@ -145,6 +148,14 @@ const handler = async function (argv: any) {
     const appNames = argv.delete;
     for (const appName of appNames) {
       await deleteApp(appName, credentials, true);
+    }
+  }
+
+  // Handle `retool apps -e <app-name>`
+  else if (argv.export) {
+    const appNames = argv.export;
+    for (const appName of appNames) {
+      await exportApp(appName, credentials);
     }
   }
 
