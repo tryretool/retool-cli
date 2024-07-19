@@ -1,10 +1,10 @@
+import { input } from "@inquirer/prompts";
 import { Entry } from "@napi-rs/keyring";
 
 import { getRequest } from "./networking";
 import { isAccessTokenValid, isOriginValid, isXsrfValid } from "./validation";
 
 const axios = require("axios");
-const inquirer = require("inquirer");
 const ora = require("ora");
 
 const RETOOL_CLI_SERVICE_NAME = "Retool CLI";
@@ -31,15 +31,16 @@ export type Credentials = {
   telemetryLastSent?: number;
 };
 
+// A part of credentials that might be passed as the command line arguments.
+export type PartialCredentials = Partial<Pick<Credentials, "origin" | "xsrf" | "accessToken">>
+
 // Legacy way of getting credentials.
-export async function askForCookies() {
-  let { origin } = await inquirer.prompt([
-    {
-      name: "origin",
+export async function askForCookies({ origin, xsrf, accessToken }: PartialCredentials) {
+  if (!origin) {
+    origin = await input({
       message: "What is your Retool origin? (e.g., https://my-org.retool.com).",
-      type: "input",
-    },
-  ]);
+    })
+  }
   //Check if last character is a slash. If so, remove it.
   if (origin[origin.length - 1] === "/") {
     origin = origin.slice(0, -1);
@@ -48,25 +49,21 @@ export async function askForCookies() {
     console.log("Error: Origin is invalid. Remember to include https://.");
     process.exit(1);
   }
-  const { xsrf } = await inquirer.prompt([
-    {
-      name: "xsrf",
+  if (!xsrf) {
+    xsrf = await input({
       message:
         "What is your XSRF token? (e.g., 26725f72-8129-47f7-835a-cba0e5dbcfe6) \n  Log into Retool, open cookies inspector.\n  In Chrome, hit ⌘+⌥+I (Mac) or Ctrl+Shift+I (Windows, Linux) to open dev tools.\n  Application tab > your-org.retool.com in Cookies menu > double click cookie value and copy it.",
-      type: "input",
-    },
-  ]);
+    });
+  }
   if (!isXsrfValid(xsrf)) {
     console.log("Error: XSRF token is invalid.");
     process.exit(1);
   }
-  const { accessToken } = await inquirer.prompt([
-    {
-      name: "accessToken",
+  if (!accessToken) {
+    accessToken = await input({
       message: `What is your access token? It's also found in the cookies inspector.`,
-      type: "input",
-    },
-  ]);
+    });
+  }
   if (!isAccessTokenValid(accessToken)) {
     console.log("Error: Access token is invalid.");
     process.exit(1);
