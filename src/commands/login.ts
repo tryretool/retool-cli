@@ -1,5 +1,6 @@
+import { confirm, input, select } from "@inquirer/prompts";
 import express from "express";
-import { CommandModule } from "yargs";
+import { ArgumentsCamelCase, CommandBuilder, CommandModule, InferredOptionTypes } from "yargs";
 
 import { accessTokenFromCookies, xsrfTokenFromCookies } from "../utils/cookies";
 import {
@@ -15,34 +16,68 @@ const path = require("path");
 
 const axios = require("axios");
 const chalk = require("chalk");
-const inquirer = require("inquirer");
 const open = require("open");
+
+// A helper function to create CommandBuilder without losing the type
+// information about defined keys.
+function createBuilder<T extends CommandBuilder>(input: T) { return input }
 
 const command = "login";
 const describe = "Log in to Retool.";
-const builder = {};
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const handler = async function (argv: any) {
+const builder = createBuilder({
+  "access-token": {
+    describe: "Specify access token to use for Cookie login",
+    type: "string",
+  },
+  email: {
+    describe: "Specify user email for email / localhost login",
+    type: "string",
+  },
+  force: {
+    describe: "Re-authenticate even when already logged in",
+    type: "boolean",
+  },
+  "login-method": {
+    describe: "Specify login method",
+    choices: [
+      "browser",
+      "email",
+      "cookies",
+      "localhost",
+    ],
+    type: "string",
+  },
+  origin: {
+    describe: "Specify the login origin host",
+    type: "string",
+  },
+  password: {
+    describe: "Specify password for email / localhost login",
+    type: "string",
+  },
+  "xsrf-token": {
+    describe: "Specify XSRF token to use for Coookie login",
+    type: "string",
+  },
+});
+
+type LoginOptionType = InferredOptionTypes<typeof builder>
+const handler = async function (argv: ArgumentsCamelCase<LoginOptionType>) {
   // Ask user if they want to overwrite existing credentials.
-  if (doCredentialsExist()) {
-    const { overwrite } = await inquirer.prompt([
-      {
-        name: "overwrite",
-        message: "You're already logged in. Do you want to re-authenticate?",
-        type: "confirm",
-      },
-    ]);
+  if (doCredentialsExist() && !argv.force) {
+    const overwrite = await confirm({
+      message: "You're already logged in. Do you want to re-authenticate?",
+    })
     if (!overwrite) {
       return;
     }
   }
 
   // Ask user how they want to login.
-  const { loginMethod } = await inquirer.prompt([
-    {
-      name: "loginMethod",
+  let loginMethod = argv.loginMethod
+  if (!loginMethod) {
+    loginMethod = await select({
       message: "How would you like to login?",
-      type: "list",
       choices: [
         {
           name: "Log in using Google SSO in a web browser",
@@ -61,16 +96,20 @@ const handler = async function (argv: any) {
           value: "localhost",
         },
       ],
-    },
-  ]);
+    });
+  }
   if (loginMethod === "browser") {
     await loginViaBrowser();
   } else if (loginMethod === "email") {
-    await loginViaEmail(false);
+    await loginViaEmail(false, argv.email, argv.password);
   } else if (loginMethod === "cookies") {
-    await askForCookies();
+    await askForCookies({
+      origin: argv.origin,
+      xsrf: argv.xsrfToken,
+      accessToken: argv.accessToken,
+    });
   } else if (loginMethod === "localhost") {
-    await loginViaEmail(true);
+    await loginViaEmail(true, argv.email, argv.password);
   }
 
   await logDAU();
@@ -79,19 +118,17 @@ const handler = async function (argv: any) {
 // Ask the user to input their email and password.
 // Fire off a request to Retool's login & auth endpoints.
 // Persist the credentials.
-async function loginViaEmail(localhost = false) {
-  const { email, password } = await inquirer.prompt([
-    {
-      name: "email",
+async function loginViaEmail(localhost = false, email?: string, password?: string) {
+  if (!email) {
+    email = await input({
       message: "What is your email?",
-      type: "input",
-    },
-    {
-      name: "password",
+    })
+  }
+  if (!password) {
+    password = await input({
       message: "What is your password?",
-      type: "password",
-    },
-  ]);
+    });
+  }
 
   const loginOrigin = localhost
     ? "http://localhost:3000"
@@ -225,7 +262,7 @@ export function logSuccess() {
   }
 }
 
-const commandModule: CommandModule = {
+const commandModule: CommandModule<any, LoginOptionType> = {
   command,
   describe,
   builder,
