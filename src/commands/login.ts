@@ -56,7 +56,7 @@ const builder = createBuilder({
     type: "string",
   },
   "xsrf-token": {
-    describe: "Specify XSRF token to use for Coookie login",
+    describe: "Specify XSRF token to use for Cookie login",
     type: "string",
   },
 });
