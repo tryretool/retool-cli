@@ -41,9 +41,9 @@ export async function postRequest(
   }
 }
 
-export async function getRequest(url: string, exitOnFailure = true) {
+export async function getRequest(url: string, exitOnFailure = true, headers = {}) {
   try {
-    const response = await axios.get(url);
+    const response = await axios.get(url, { headers });
     return response;
   } catch (error: any) {
     handleError(error, exitOnFailure, url);
