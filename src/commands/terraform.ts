@@ -10,6 +10,8 @@ import {
   generateTerraformConfigForPermissions,
   generateTerraformConfigForSSO,
   generateTerraformConfigForSourceControl,
+  generateTerraformConfigForSourceControlSettings,
+  generateTerraformConfigForSpaces,
   importRetoolConfig
 } from "../utils/terraformGen";
 import type { 
@@ -17,7 +19,9 @@ import type {
   TerraformGroupImport, 
   TerraformPermissionsImport, 
   TerraformSSOImport, 
-  TerraformSourceControlImport 
+  TerraformSourceControlImport, 
+  TerraformSourceControlSettingsImport,
+  TerraformSpaceImport
 } from "../utils/terraformGen";
 
 
@@ -77,6 +81,8 @@ import {
     const permissionResources = config.filter((resource) => resource.resourceType === "retool_permissions") as TerraformPermissionsImport[];
     const ssoResources = config.filter((resource) => resource.resourceType === "retool_sso") as TerraformSSOImport[];
     const sourceControlResources = config.filter((resource) => resource.resourceType === "retool_source_control") as TerraformSourceControlImport[];
+    const sourceControlSettingsResources = config.filter((resource) => resource.resourceType === "retool_source_control_settings") as TerraformSourceControlSettingsImport[];
+    const spaceResources = config.filter((resource) => resource.resourceType === "retool_space") as TerraformSpaceImport[];
     let lines = await generateTerraformConfigForFolders(folderResources);
     lines = lines.concat(generateTerraformConfigForGroups(groupResources));
     lines = lines.concat(await generateTerraformConfigForPermissions(permissionResources, config));
@@ -86,6 +92,10 @@ import {
     if (sourceControlResources.length > 0) {
       lines = lines.concat(generateTerraformConfigForSourceControl(sourceControlResources[0]));
     }
+    if (sourceControlSettingsResources.length > 0) {
+      lines = lines.concat(generateTerraformConfigForSourceControlSettings(sourceControlSettingsResources[0]));
+    }
+    lines = lines.concat(generateTerraformConfigForSpaces(spaceResources));
     // Print everything into a file
     fs.writeFileSync(argv.config, lines.join("\n"));
   
