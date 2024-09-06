@@ -41,10 +41,15 @@ export type TerraformSSOImport = TerraformResourceImportBase & {
   ssoConfig: APISSOConfig;
 }
 
+export type TerraformSourceControlImport = TerraformResourceImportBase & {
+  resourceType: "retool_source_control";
+  sourceControlConfig: APISourceControlConfig;
+}
+
 // This type represents any imported terraform resource
 type TerraformResourceImport = (TerraformResourceImportBase & {
-  resourceType: "retool_space" | "retool_source_control" | "retool_source_control_settings";
-}) | TerraformFolderImport | TerraformGroupImport | TerraformPermissionsImport | TerraformSSOImport;
+  resourceType: "retool_space" | "retool_source_control_settings";
+}) | TerraformFolderImport | TerraformGroupImport | TerraformPermissionsImport | TerraformSSOImport | TerraformSourceControlImport;
 
 // Ensure that the generated Terraform id is unique - if not, append a sequence number to it
 const makeUniqueTerraformId = (terraformId: string, existingIds: Set<string>): string => {
@@ -191,6 +196,86 @@ const importSpaces = async function (): Promise<TerraformResourceImport[]> {
   return [];
 }
 
+// Types below are generated based on the zod schema defined here: https://github.com/tryretool/retool_development/blob/c49c49d4bbab4972f7bf28e6348ec97dd2ff5b38/backend/src/server/publicApi/v2/sourceControl/schemas.ts#L161
+type CommonGitHubConfig = {
+  url?: string;
+  enterprise_api_url?: string;
+};
+
+type GitHubAppConfig = CommonGitHubConfig & {
+  type: 'App';
+  app_id: string;
+  installation_id: string;
+  private_key: string;
+};
+
+type GitHubPersonalConfig = CommonGitHubConfig & {
+  type: 'Personal';
+  personal_access_token: string;
+};
+
+type GitHubConfig = GitHubAppConfig | GitHubPersonalConfig;
+
+type GitLabConfig = {
+  project_id: number;
+  url: string;
+  project_access_token: string;
+};
+
+type AWSCodeCommitConfig = {
+  url: string;
+  region: string;
+  access_key_id: string;
+  secret_access_key: string;
+  https_username: string;
+  https_password: string;
+};
+
+type BitbucketConfig = {
+  username: string;
+  url?: string;
+  enterprise_api_url?: string;
+  app_password: string;
+};
+
+type AzureReposConfig = {
+  url: string;
+  project: string;
+  user: string;
+  personal_access_token: string;
+  use_basic_auth: boolean;
+};
+
+type SourceControlBaseConfigurationExternal = {
+  provider: string;
+  org: string;
+  repo: string;
+  default_branch: string;
+  repo_version?: string;
+};
+
+type APISourceControlConfig =
+  | (SourceControlBaseConfigurationExternal & {
+      config: GitHubConfig;
+      provider: 'GitHub';
+    })
+  | (SourceControlBaseConfigurationExternal & {
+      config: GitLabConfig;
+      provider: 'GitLab';
+    })
+  | (SourceControlBaseConfigurationExternal & {
+      config: AWSCodeCommitConfig;
+      provider: 'AWS CodeCommit';
+    })
+  | (SourceControlBaseConfigurationExternal & {
+      config: BitbucketConfig;
+      provider: 'Bitbucket';
+    })
+  | (SourceControlBaseConfigurationExternal & {
+      config: AzureReposConfig;
+      provider: 'Azure Repos';
+    });
+
 const importSourceControl = async function (): Promise<TerraformResourceImport[]> {
   const response = await getRequest(
     `${API_URL_PREFIX}/source_control/config`, 
@@ -204,7 +289,8 @@ const importSourceControl = async function (): Promise<TerraformResourceImport[]
   return [{
     id: "source_control",
     terraformId: "source_control",
-    resourceType: "retool_source_control"
+    resourceType: "retool_source_control",
+    sourceControlConfig: response.data.data,
   }];
 }
 
@@ -615,6 +701,75 @@ export const generateTerraformConfigForSSO = function (sso: TerraformSSOImport):
     lines.push(`  }`);
   }
   lines.push(`  disable_email_password_login = ${sso.ssoConfig.disable_email_password_login}`);
+  lines.push("}");
+  lines.push("");
+  return lines;
+}
+
+export const generateTerraformConfigForSourceControl = function (sourceControl: TerraformSourceControlImport): string[] {
+  const lines = [
+    `resource "retool_source_control" "${sourceControl.terraformId}" {`,
+  ];
+  lines.push(`  org = "${sourceControl.sourceControlConfig.org}"`);
+  lines.push(`  repo = "${sourceControl.sourceControlConfig.repo}"`);
+  lines.push(`  default_branch = "${sourceControl.sourceControlConfig.default_branch}"`);
+  if (sourceControl.sourceControlConfig.repo_version) {
+    lines.push(`  repo_version = "${sourceControl.sourceControlConfig.repo_version}"`);
+  }
+  if (sourceControl.sourceControlConfig.provider === "GitHub") {
+    lines.push(`  github = {`);
+    const config = sourceControl.sourceControlConfig.config;
+    if (config.type === "App") {
+      lines.push(`    app_authentication = {`);
+      lines.push(`      app_id = "${config.app_id}"`);
+      lines.push(`      installation_id = "${config.installation_id}"`);
+      lines.push(`      private_key = null # Replace with your private key`);
+      lines.push(`    }`);
+    } else {
+      lines.push(`    personal_access_token = null # Replace with your personal access token`);
+    }
+    if (config.url) {
+      lines.push(`    url = "${config.url}"`);
+    }
+    if (config.enterprise_api_url) {
+      lines.push(`    enterprise_api_url = "${config.enterprise_api_url}"`);
+    }
+    lines.push("  }");
+  } else if (sourceControl.sourceControlConfig.provider === "GitLab") {
+    lines.push(`  gitlab = {`);
+    const config = sourceControl.sourceControlConfig.config;
+    lines.push(`    project_id = ${config.project_id}`);
+    lines.push(`    project_access_token = null # Replace with your project access token`);
+    lines.push(`    url = "${config.url}"`);
+    lines.push("  }");
+  } else if (sourceControl.sourceControlConfig.provider === "AWS CodeCommit") {
+    lines.push(`  aws_codecommit = {`);
+    const config = sourceControl.sourceControlConfig.config;
+    lines.push(`    region = "${config.region}"`);
+    lines.push(`    access_key_id = null # Replace with your access key id`);
+    lines.push(`    secret_access_key = null # Replace with your secret access key`);
+    lines.push(`    https_username = "${config.https_username}"`);
+    lines.push(`    https_password = null # Replace with your https password`);
+    lines.push(`    url = "${config.url}"`);
+    lines.push("  }");
+  } else if (sourceControl.sourceControlConfig.provider === "Bitbucket") {
+    lines.push(`  bitbucket = {`);
+    const config = sourceControl.sourceControlConfig.config;
+    lines.push(`    username = "${config.username}"`);
+    lines.push(`    app_password = null # Replace with your app password`);
+    lines.push(`    url = "${config.url}"`);
+    lines.push(`    enterprise_api_url = "${config.enterprise_api_url}"`);
+    lines.push("  }");
+  } else if (sourceControl.sourceControlConfig.provider === "Azure Repos") {
+    lines.push(`  azure_repos = {`);
+    const config = sourceControl.sourceControlConfig.config;
+    lines.push(`    project = "${config.project}"`);
+    lines.push(`    user = "${config.user}"`);
+    lines.push(`    personal_access_token = null # Replace with your personal access token`);
+    lines.push(`    use_basic_auth = ${config.use_basic_auth}`);
+    lines.push(`    url = "${config.url}"`);
+    lines.push("  }");
+  }
   lines.push("}");
   lines.push("");
   return lines;
