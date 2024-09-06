@@ -16,23 +16,35 @@ const GROUP_TERRAFORM_IDS = new Set<string>();
 const GROUP_ID_TO_TERRAFORM_ID = new Map<string, string>();
 const SPACE_TERRAFORM_IDS = new Set<string>();
 
-// This type represents any imported terraform resource
-type TerraformResourceImport = {
+type TerraformResourceImportBase = {
   id: string; // The ID of the resource in the Retool database. Can be set to a dummy id for resoures that don't have an ID, like SSO settings.
   terraformId: string;
-} & ({
-  resourceType: "retool_space" | "retool_source_control" | "retool_source_control_settings" | "retool_sso";
-} | 
-{ 
+}
+
+export type TerraformFolderImport = TerraformResourceImportBase & {
   resourceType: "retool_folder";
   folder: APIFolder;
-} | {
+}
+
+export type TerraformGroupImport = TerraformResourceImportBase & {
   resourceType: "retool_group";
   group: APIGroup;
-} | {
+}
+
+export type TerraformPermissionsImport = TerraformResourceImportBase & {
   resourceType: "retool_permissions";
   groupId: string;
-});
+}
+
+export type TerraformSSOImport = TerraformResourceImportBase & {
+  resourceType: "retool_sso";
+  ssoConfig: APISSOConfig;
+}
+
+// This type represents any imported terraform resource
+type TerraformResourceImport = (TerraformResourceImportBase & {
+  resourceType: "retool_space" | "retool_source_control" | "retool_source_control_settings";
+}) | TerraformFolderImport | TerraformGroupImport | TerraformPermissionsImport | TerraformSSOImport;
 
 // Ensure that the generated Terraform id is unique - if not, append a sequence number to it
 const makeUniqueTerraformId = (terraformId: string, existingIds: Set<string>): string => {
@@ -204,6 +216,98 @@ const importSourceControlSettings = function (): TerraformResourceImport[] {
   }];
 }
 
+// Based on the API schema here: https://github.com/tryretool/retool_development/blob/e3637e2a7471a3875a6c36b496a175c5925540f3/backend/src/server/publicApi/v2/sso/schemas.ts#L192
+type APISSOConfig =
+| {
+    config_type: 'google'
+    google_client_id: string
+    google_client_secret: string
+    disable_email_password_login: boolean
+    jit_enabled: boolean
+    restricted_domain?: string
+    trigger_login_automatically: boolean
+  }
+| {
+    config_type: 'oidc'
+    oidc_client_id: string
+    oidc_client_secret: string
+    oidc_scopes: string
+    oidc_auth_url: string
+    oidc_token_url: string
+    oidc_userinfo_url?: string
+    oidc_audience?: string
+    jwt_email_key: string
+    jwt_roles_key?: string
+    jwt_first_name_key: string
+    jwt_last_name_key: string
+    roles_mapping?: string
+    jit_enabled: boolean
+    restricted_domain?: string
+    trigger_login_automatically: boolean
+    disable_email_password_login: boolean
+  }
+| {
+    config_type: 'google & oidc'
+    google_client_id: string
+    google_client_secret: string
+    disable_email_password_login: boolean
+    oidc_client_id: string
+    oidc_client_secret: string
+    oidc_scopes: string
+    oidc_auth_url: string
+    oidc_token_url: string
+    oidc_userinfo_url?: string
+    oidc_audience?: string
+    jwt_email_key: string
+    jwt_roles_key?: string
+    jwt_first_name_key: string
+    jwt_last_name_key: string
+    roles_mapping?: string
+    jit_enabled: boolean
+    restricted_domain?: string
+    trigger_login_automatically: boolean
+  }
+| {
+    config_type: 'saml'
+    idp_metadata_xml: string
+    saml_first_name_attribute: string
+    saml_last_name_attribute: string
+    saml_groups_attribute?: string
+    saml_sync_group_claims: boolean
+    ldap_sync_group_claims?: boolean
+    ldap_role_mapping?: string
+    ldap_server_url?: string
+    ldap_base_domain_components?: string
+    ldap_server_name?: string
+    ldap_server_key?: string
+    ldap_server_certificate?: string
+    jit_enabled: boolean
+    restricted_domain?: string
+    trigger_login_automatically: boolean
+    disable_email_password_login: boolean
+  }
+| {
+    config_type: 'google & saml'
+    google_client_id: string
+    google_client_secret: string
+    disable_email_password_login: boolean
+    idp_metadata_xml: string
+    saml_first_name_attribute: string
+    saml_last_name_attribute: string
+    saml_groups_attribute?: string
+    saml_sync_group_claims: boolean
+    ldap_sync_group_claims?: boolean
+    ldap_role_mapping?: string
+    ldap_server_url?: string
+    ldap_base_domain_components?: string
+    ldap_server_name?: string
+    ldap_server_key?: string
+    ldap_server_certificate?: string
+    jit_enabled: boolean
+    restricted_domain?: string
+    trigger_login_automatically: boolean
+  }
+
 const importSSO = async function (): Promise<TerraformResourceImport[]> {
   const response = await getRequest(
     `${API_URL_PREFIX}/sso/config`, 
@@ -217,7 +321,8 @@ const importSSO = async function (): Promise<TerraformResourceImport[]> {
   return [{
     id: "sso",
     terraformId: "sso",
-    resourceType: "retool_sso"
+    resourceType: "retool_sso",
+    ssoConfig: response.data.data,
   }];
 }
 
@@ -250,7 +355,7 @@ const getRootFolderIds = async function (): Promise<Map<string, string>> {
   return rootFolderIdByType;
 }
 
-export const generateTerraformConfigForFolders = async function (folders: { id: string, terraformId: string, resourceType: "retool_folder", folder: APIFolder}[]): Promise<string[]> {
+export const generateTerraformConfigForFolders = async function (folders: TerraformFolderImport[]): Promise<string[]> {
   const folderIdToTerraformId = new Map<string, string>();
   for (const folder of folders) {
     // technically, we could've used the folder.id directly, since it includes folder type, but I don't want to depend on this
@@ -308,7 +413,7 @@ const getPermissionsForGroup = async function (groupId: string): Promise<APIPerm
   return permissions;
 }
 
-export const generateTerraformConfigForGroups = function (groups: { id: string, terraformId: string, resourceType: "retool_group", group: APIGroup}[]): string[] {
+export const generateTerraformConfigForGroups = function (groups: TerraformGroupImport[]): string[] {
   let lines: string[] = [];
   for (const group of groups) {
     const resourceConfigLines = [
@@ -334,7 +439,7 @@ export const generateTerraformConfigForGroups = function (groups: { id: string, 
   return lines;
 }
 
-export const generateTerraformConfigForPermissions = async function (permissions: { id: string, terraformId: string, resourceType: "retool_permissions", groupId: string}[], allResources: TerraformResourceImport[]): Promise<string[]> {
+export const generateTerraformConfigForPermissions = async function (permissions: TerraformPermissionsImport[], allResources: TerraformResourceImport[]): Promise<string[]> {
   const folderIdToTerraformId = new Map<string, string>();
   const groupIdToTerraformId = new Map<string, string>();
   for (const resource of allResources) {
@@ -374,5 +479,143 @@ export const generateTerraformConfigForPermissions = async function (permissions
     resourceConfigLines.push("");
     lines = lines.concat(resourceConfigLines);
   }
+  return lines;
+}
+
+// Parses a string like "key1->value1,key2->value2" into a map. 
+// Copied from https://github.com/tryretool/retool_development/blob/76da02b9538884f27bc4499e742099163a6d3841/packages/common/utils/parseArrowSyntax.ts
+const parseArrowSyntax = function (arrowSyntax: string | unknown): { [key: string]: string } {
+  if (typeof arrowSyntax !== 'string') {
+    return {}
+  }
+  return arrowSyntax.split(',').reduce((acc: Record<string, string>, arrowSyntaxSubstring) => {
+    const splitted = arrowSyntaxSubstring.split('->')
+    if (!splitted || !splitted[0] || !splitted[1]) {
+      return acc
+    }
+    const key = splitted[0].trim()
+    const value = splitted[1].trim()
+    acc[key] = value
+    return acc
+  }, {})
+}
+
+// Parses a string like "key1->value, key2-> value, key1->value2" into a map of string arrays. 
+// input "b -> B, b -> C" will result in output {b: ["B", "C"]}
+// Copied from https://github.com/tryretool/retool_development/blob/76da02b9538884f27bc4499e742099163a6d3841/packages/common/utils/parseArrowSyntaxMultiValue.ts#L2-L3
+const parseArrowSyntaxMultiValue = function (arrowSyntax: string | unknown): { [key: string]: string[] } {
+  const result: { [key: string]: string[] } = {}
+  if (typeof arrowSyntax !== 'string') {
+    return result
+  }
+  arrowSyntax.split(',').forEach((arrowSyntaxSubstring) => {
+    const splits = arrowSyntaxSubstring.split('->')
+    if (splits.length !== 2) return
+    const [key, value] = [splits[0].trim(), splits[1].trim()]
+    if (!key || !value) return
+    if (!(key in result)) {
+      result[key] = []
+    }
+    // check for dup and push
+    if (!result[key].includes(value)) {
+      result[key].push(value)
+    }
+  })
+  return result
+}
+
+
+export const generateTerraformConfigForSSO = function (sso: TerraformSSOImport): string[] {
+  const lines = [
+    `resource "retool_sso" "${sso.terraformId}" {`,
+  ];
+  if (sso.ssoConfig.config_type === "google" || sso.ssoConfig.config_type === "google & oidc" || sso.ssoConfig.config_type === "google & saml") {
+    lines.push(`  google = {`);
+    lines.push(`    client_id = "${sso.ssoConfig.google_client_id}"`);
+    lines.push(`    client_secret = null # Replace with your client secret`);
+    lines.push(`  }`);
+  }
+  if (sso.ssoConfig.config_type === "oidc" || sso.ssoConfig.config_type === "google & oidc") {
+    lines.push(`  oidc = {`);
+    lines.push(`    client_id = "${sso.ssoConfig.oidc_client_id}"`);
+    lines.push(`    client_secret = null # Replace with your client secret`);
+    lines.push(`    scopes = "${sso.ssoConfig.oidc_scopes}"`);
+    lines.push(`    auth_url = "${sso.ssoConfig.oidc_auth_url}"`);
+    lines.push(`    token_url = "${sso.ssoConfig.oidc_token_url}"`);
+    if (sso.ssoConfig.oidc_userinfo_url) {
+      lines.push(`    userinfo_url = "${sso.ssoConfig.oidc_userinfo_url}"`);
+    }
+    if (sso.ssoConfig.oidc_audience) {
+      lines.push(`    audience = "${sso.ssoConfig.oidc_audience}"`);
+    }
+    lines.push(`    jwt_email_key = "${sso.ssoConfig.jwt_email_key}"`);
+    if (sso.ssoConfig.jwt_roles_key) {
+      lines.push(`    jwt_roles_key = "${sso.ssoConfig.jwt_roles_key}"`);
+    }
+    lines.push(`    jwt_first_name_key = "${sso.ssoConfig.jwt_first_name_key}"`);
+    lines.push(`    jwt_last_name_key = "${sso.ssoConfig.jwt_last_name_key}"`);
+    if (sso.ssoConfig.roles_mapping) {
+      // parse -> syntax into string-string map
+      const rolesMapping = parseArrowSyntax(sso.ssoConfig.roles_mapping);
+      lines.push(`    roles_mapping = {`);
+      for (const [key, value] of Object.entries(rolesMapping)) {
+        lines.push(`      ${key} = "${value}"`);
+      }
+      lines.push(`    }`);
+    }
+    lines.push(`    jit_enabled = ${sso.ssoConfig.jit_enabled}`);
+    lines.push(`    trigger_login_automatically = ${sso.ssoConfig.trigger_login_automatically}`);
+    if (sso.ssoConfig.restricted_domain) {
+      lines.push(`    restricted_domains = [${sso.ssoConfig.restricted_domain.split(',').map((domain) => `"${domain.trim()}"`).join(", ")}]`);
+    }
+    lines.push(`  }`);
+  }
+  if (sso.ssoConfig.config_type === "saml" || sso.ssoConfig.config_type === "google & saml") {
+    lines.push(`  saml = {`);
+    lines.push(`    idp_metadata_xml = "${sso.ssoConfig.idp_metadata_xml}"`);
+    lines.push(`    first_name_attribute = "${sso.ssoConfig.saml_first_name_attribute}"`);
+    lines.push(`    last_name_attribute = "${sso.ssoConfig.saml_last_name_attribute}"`);
+    if (sso.ssoConfig.saml_groups_attribute) {
+      lines.push(`    groups_attribute = "${sso.ssoConfig.saml_groups_attribute}"`);
+    }
+    lines.push(`    sync_group_claims = ${sso.ssoConfig.saml_sync_group_claims}`);
+    if (sso.ssoConfig.ldap_role_mapping) {
+      const rolesMapping = parseArrowSyntaxMultiValue(sso.ssoConfig.ldap_role_mapping);
+      lines.push(`    roles_mapping = {`);
+      for (const [key, value] of Object.entries(rolesMapping)) {
+        lines.push(`      ${key} = [${value.map((v) => `"${v}"`).join(", ")}]`);
+      }
+      lines.push(`    }`);
+    }
+    lines.push(`    ldap_sync_group_claims = ${sso.ssoConfig.ldap_sync_group_claims}`);
+    if (sso.ssoConfig.ldap_server_url || sso.ssoConfig.ldap_base_domain_components || sso.ssoConfig.ldap_server_name || sso.ssoConfig.ldap_server_key || sso.ssoConfig.ldap_server_certificate) {
+      lines.push(`    ldap = {`);
+      if (sso.ssoConfig.ldap_server_url) {
+        lines.push(`      server_url = "${sso.ssoConfig.ldap_server_url}"`);
+      }
+      if (sso.ssoConfig.ldap_base_domain_components) {
+        lines.push(`      base_domain_components = "${sso.ssoConfig.ldap_base_domain_components}"`);
+      }
+      if (sso.ssoConfig.ldap_server_name) {
+        lines.push(`      server_name = "${sso.ssoConfig.ldap_server_name}"`);
+      }
+      if (sso.ssoConfig.ldap_server_key) {
+        lines.push(`      server_key = null # Replace with your server key`);
+      }
+      if (sso.ssoConfig.ldap_server_certificate) {
+        lines.push(`      server_certificate = null # Replace with your server certificate`);
+      }
+      lines.push(`    }`);
+    }
+    lines.push(`    jit_enabled = ${sso.ssoConfig.jit_enabled}`);
+    lines.push(`    trigger_login_automatically = ${sso.ssoConfig.trigger_login_automatically}`);
+    if (sso.ssoConfig.restricted_domain) {
+      lines.push(`    restricted_domains = [${sso.ssoConfig.restricted_domain.split(',').map((domain) => `"${domain.trim()}"`).join(", ")}]`);
+    }
+    lines.push(`  }`);
+  }
+  lines.push(`  disable_email_password_login = ${sso.ssoConfig.disable_email_password_login}`);
+  lines.push("}");
+  lines.push("");
   return lines;
 }

@@ -4,7 +4,20 @@ import ora from "ora";
 import { CommandModule } from "yargs";
 
 import { logDAU } from "../utils/telemetry";
-import { generateTerraformConfigForFolders, generateTerraformConfigForGroups, generateTerraformConfigForPermissions, importRetoolConfig } from "../utils/terraformGen";
+import { 
+  generateTerraformConfigForFolders,
+  generateTerraformConfigForGroups,
+  generateTerraformConfigForPermissions,
+  generateTerraformConfigForSSO,
+  importRetoolConfig
+} from "../utils/terraformGen";
+import type { 
+  TerraformFolderImport, 
+  TerraformGroupImport, 
+  TerraformPermissionsImport, 
+  TerraformSSOImport 
+} from "../utils/terraformGen";
+
 
 const command: CommandModule["command"] = "terraform";
 const describe: CommandModule["describe"] = `Generate Terraform configuration for the given Retool organization.
@@ -57,16 +70,20 @@ import {
     console.log("Generated Terraform file with `import` blocks.");
   }
   if (argv.config) {
-    const folderResources = config.filter((resource) => resource.resourceType === "retool_folder");
-    const groupResources = config.filter((resource) => resource.resourceType === "retool_group");
-    const permissionResources = config.filter((resource) => resource.resourceType === "retool_permissions");
+    const folderResources = config.filter((resource) => resource.resourceType === "retool_folder") as TerraformFolderImport[]; // not sure why TS is not able to correctly infer the type here
+    const groupResources = config.filter((resource) => resource.resourceType === "retool_group") as TerraformGroupImport[];
+    const permissionResources = config.filter((resource) => resource.resourceType === "retool_permissions") as TerraformPermissionsImport[];
+    const ssoResources = config.filter((resource) => resource.resourceType === "retool_sso") as TerraformSSOImport[];
     let lines = await generateTerraformConfigForFolders(folderResources);
     lines = lines.concat(generateTerraformConfigForGroups(groupResources));
     lines = lines.concat(await generateTerraformConfigForPermissions(permissionResources, config));
+    if (ssoResources.length > 0) {
+      lines = lines.concat(generateTerraformConfigForSSO(ssoResources[0]));
+    }
     // Print everything into a file
     fs.writeFileSync(argv.config, lines.join("\n"));
   
-    console.log("Generated Terraform file with `import` blocks.");
+    console.log("Generated Terraform file with resource configurations.");
   }
 };
 
