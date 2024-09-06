@@ -356,7 +356,6 @@ export const generateTerraformConfigForPermissions = async function (permissions
       `  permissions = [`,
     ];
     for (const groupPermission of groupPermissions) {
-      console.log(groupPermission);
       resourceConfigLines.push(`    {`);
       resourceConfigLines.push(`      object = {`);
       if (groupPermission.type === "folder" && folderIdToTerraformId.has(groupPermission.id)) {
