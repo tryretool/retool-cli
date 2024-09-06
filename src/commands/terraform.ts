@@ -4,7 +4,7 @@ import ora from "ora";
 import { CommandModule } from "yargs";
 
 import { logDAU } from "../utils/telemetry";
-import { importRetoolConfig } from "../utils/terraformGen";
+import { generateTerraformConfigForFolders, generateTerraformConfigForGroups, generateTerraformConfigForPermissions, importRetoolConfig } from "../utils/terraformGen";
 
 const command: CommandModule["command"] = "terraform";
 const describe: CommandModule["describe"] = `Generate Terraform configuration for the given Retool organization.
@@ -18,6 +18,10 @@ const builder: CommandModule["builder"] = {
     alias: "i",
     describe: `Path of the output file with "import" blocks in it`,
   },
+  config: {
+    alias: "c",
+    describe: `Path of the output file with Terraform resource configurations in it`,
+  },
 };
 
 const handler = async function (argv: any) {
@@ -29,8 +33,8 @@ const handler = async function (argv: any) {
     process.exit(1);
   }
 
-  if (!argv.imports) {
-    console.error("Please provide an output file path using --imports flag.");
+  if (!argv.imports && !argv.config) {
+    console.error("Please provide an output file path using --imports or --config flag.");
     process.exit(1);
   }
 
@@ -49,6 +53,18 @@ import {
 `
     }).join("");
     fs.writeFileSync(argv.imports, fileContent);
+  
+    console.log("Generated Terraform file with `import` blocks.");
+  }
+  if (argv.config) {
+    const folderResources = config.filter((resource) => resource.resourceType === "retool_folder");
+    const groupResources = config.filter((resource) => resource.resourceType === "retool_group");
+    const permissionResources = config.filter((resource) => resource.resourceType === "retool_permissions");
+    let lines = await generateTerraformConfigForFolders(folderResources);
+    lines = lines.concat(generateTerraformConfigForGroups(groupResources));
+    lines = lines.concat(await generateTerraformConfigForPermissions(permissionResources, config));
+    // Print everything into a file
+    fs.writeFileSync(argv.config, lines.join("\n"));
   
     console.log("Generated Terraform file with `import` blocks.");
   }
