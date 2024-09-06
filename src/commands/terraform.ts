@@ -9,13 +9,15 @@ import {
   generateTerraformConfigForGroups,
   generateTerraformConfigForPermissions,
   generateTerraformConfigForSSO,
+  generateTerraformConfigForSourceControl,
   importRetoolConfig
 } from "../utils/terraformGen";
 import type { 
   TerraformFolderImport, 
   TerraformGroupImport, 
   TerraformPermissionsImport, 
-  TerraformSSOImport 
+  TerraformSSOImport, 
+  TerraformSourceControlImport 
 } from "../utils/terraformGen";
 
 
@@ -74,11 +76,15 @@ import {
     const groupResources = config.filter((resource) => resource.resourceType === "retool_group") as TerraformGroupImport[];
     const permissionResources = config.filter((resource) => resource.resourceType === "retool_permissions") as TerraformPermissionsImport[];
     const ssoResources = config.filter((resource) => resource.resourceType === "retool_sso") as TerraformSSOImport[];
+    const sourceControlResources = config.filter((resource) => resource.resourceType === "retool_source_control") as TerraformSourceControlImport[];
     let lines = await generateTerraformConfigForFolders(folderResources);
     lines = lines.concat(generateTerraformConfigForGroups(groupResources));
     lines = lines.concat(await generateTerraformConfigForPermissions(permissionResources, config));
     if (ssoResources.length > 0) {
       lines = lines.concat(generateTerraformConfigForSSO(ssoResources[0]));
+    }
+    if (sourceControlResources.length > 0) {
+      lines = lines.concat(generateTerraformConfigForSourceControl(sourceControlResources[0]));
     }
     // Print everything into a file
     fs.writeFileSync(argv.config, lines.join("\n"));
