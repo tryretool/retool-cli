@@ -46,10 +46,25 @@ export type TerraformSourceControlImport = TerraformResourceImportBase & {
   sourceControlConfig: APISourceControlConfig;
 }
 
+export type TerraformSourceControlSettingsImport = TerraformResourceImportBase & {
+  resourceType: "retool_source_control_settings";
+  settings: APISourceControlSettings;
+}
+
+export type TerraformSpaceImport = TerraformResourceImportBase & {
+  resourceType: "retool_space";
+  space: APISpace;
+}
+
 // This type represents any imported terraform resource
-type TerraformResourceImport = (TerraformResourceImportBase & {
-  resourceType: "retool_space" | "retool_source_control_settings";
-}) | TerraformFolderImport | TerraformGroupImport | TerraformPermissionsImport | TerraformSSOImport | TerraformSourceControlImport;
+type TerraformResourceImport = 
+| TerraformFolderImport
+| TerraformGroupImport
+| TerraformPermissionsImport
+| TerraformSSOImport
+| TerraformSourceControlImport
+| TerraformSourceControlSettingsImport
+| TerraformSpaceImport;
 
 // Ensure that the generated Terraform id is unique - if not, append a sequence number to it
 const makeUniqueTerraformId = (terraformId: string, existingIds: Set<string>): string => {
@@ -190,7 +205,8 @@ const importSpaces = async function (): Promise<TerraformResourceImport[]> {
     .map((space) => ({ 
       id: space.id, 
       terraformId: generateTerraformIdForSpace(space.domain), 
-      resourceType: "retool_space" 
+      resourceType: "retool_space",
+      space
     }));
 
   return [];
@@ -294,11 +310,28 @@ const importSourceControl = async function (): Promise<TerraformResourceImport[]
   }];
 }
 
-const importSourceControlSettings = function (): TerraformResourceImport[] {
+type APISourceControlSettings = {
+  auto_branch_naming_enabled: boolean;
+  custom_pull_request_template_enabled: boolean;
+  custom_pull_request_template: string;
+  version_control_locked: boolean;
+}
+
+const importSourceControlSettings = async function (): Promise<TerraformResourceImport[]> {
+  const response = await getRequest(
+    `${API_URL_PREFIX}/source_control/settings`, 
+    false, 
+    AUTHORIZATION_HEADER
+  );
+  if (!response) {
+    return [];
+  }
+
   return [{
     id: "source_control_settings",
     terraformId: "source_control_settings",
-    resourceType: "retool_source_control_settings"
+    resourceType: "retool_source_control_settings",
+    settings: response.data.data,
   }];
 }
 
@@ -420,7 +453,7 @@ export const importRetoolConfig = async function (): Promise<TerraformResourceIm
   imports.push(...importPermissions(groupImports.map((group) => group.id)));
   imports.push(...(await importSpaces()));
   imports.push(...(await importSourceControl()));
-  imports.push(...importSourceControlSettings());
+  imports.push(...(await importSourceControlSettings()));
   imports.push(...(await importSSO()));
   return imports;
 }
@@ -772,5 +805,32 @@ export const generateTerraformConfigForSourceControl = function (sourceControl: 
   }
   lines.push("}");
   lines.push("");
+  return lines;
+}
+
+export const generateTerraformConfigForSourceControlSettings = function (settings: TerraformSourceControlSettingsImport): string[] {
+  const lines = [
+    `resource "retool_source_control_settings" "${settings.terraformId}" {`,
+  ];
+  lines.push(`  auto_branch_naming_enabled = ${settings.settings.auto_branch_naming_enabled}`);
+  lines.push(`  custom_pull_request_template_enabled = ${settings.settings.custom_pull_request_template_enabled}`);
+  if (settings.settings.custom_pull_request_template) {
+    lines.push(`  custom_pull_request_template = "${settings.settings.custom_pull_request_template}"`);
+  }
+  lines.push(`  version_control_locked = ${settings.settings.version_control_locked}`);
+  lines.push("}");
+  lines.push("");
+  return lines;
+}
+
+export const generateTerraformConfigForSpaces = function (spaces: TerraformSpaceImport[]): string[] {
+  const lines: string[] = []
+  for (const spaceResource of spaces) {
+    lines.push(`resource "retool_space" "${spaceResource.terraformId}" {`);
+    lines.push(`  name = "${spaceResource.space.name}"`);
+    lines.push(`  domain = "${spaceResource.space.domain}"`);
+    lines.push("}");
+    lines.push("");
+  }
   return lines;
 }
