@@ -51,3 +51,9 @@ Node.js is a requirement, it can be installed [here](https://nodejs.org/en/downl
   - Hide debug output behind a `process.env.DEBUG` check.
 - Any files in `src/commands/` directory will become a top-level commands.
 - Shared logic should be placed in `src/utils/` directory.
+
+### Publishing to NPM (for Retool employees)
+
+- Bump version in `package.json`, `npm install`, commit changes
+- `npm run build`
+- `npm publish`
