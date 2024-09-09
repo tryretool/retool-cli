@@ -1,6 +1,6 @@
 {
   "name": "retool-cli",
-  "version": "1.0.28",
+  "version": "1.0.29",
   "description": "CLI for Retool",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
