@@ -50,10 +50,11 @@ export async function createApp(
 
   const { page } = createAppResult.data;
   if (!page?.uuid) {
-    console.log("Error creating app.");
-    console.log(createAppResult.data);
+    console.error("Error creating app.");
+    console.error(createAppResult.data);
     process.exit(1);
-  } else {
+  }
+
     console.log("Successfully created an App. 🎉");
     console.log(
       `${chalk.bold("View in browser:")} ${credentials.origin}/editor/${
@@ -62,7 +63,6 @@ export async function createApp(
     );
     return page;
   }
-}
 
 export async function createAppForTable(
   appName: string,
@@ -85,10 +85,11 @@ export async function createAppForTable(
 
   const { pageUuid } = createAppResult.data;
   if (!pageUuid) {
-    console.log("Error creating app.");
-    console.log(createAppResult.data);
+    console.error("Error creating app.");
+    console.error(createAppResult.data);
     process.exit(1);
-  } else {
+  }
+
     console.log("Successfully created an App. 🎉");
     console.log(
       `${chalk.bold("View in browser:")} ${
@@ -96,7 +97,6 @@ export async function createAppForTable(
       }/editor/${pageUuid}`
     );
   }
-}
 
 export async function exportApp(appName: string, credentials: Credentials) {
   // Verify that the provided appName exists.
@@ -107,7 +107,7 @@ export async function exportApp(appName: string, credentials: Credentials) {
     }
   });
   if (app?.length != 1) {
-    console.log(`0 or >1 Apps named ${appName} found. 😓`);
+    console.error(`0 or >1 Apps named ${appName} found. 😓`);
     process.exit(1);
   }
 
@@ -161,7 +161,7 @@ export async function deleteApp(
     }
   });
   if (app?.length != 1) {
-    console.log(`0 or >1 Apps named ${appName} found. 😓`);
+    console.error(`0 or >1 Apps named ${appName} found. 😓`);
     process.exit(1);
   }
 
@@ -209,7 +209,7 @@ export async function collectAppName(): Promise<string> {
   ]);
 
   if (appName.length === 0) {
-    console.log("Error: App name cannot be blank.");
+    console.error("Error: App name cannot be blank.");
     process.exit(1);
   }
 
