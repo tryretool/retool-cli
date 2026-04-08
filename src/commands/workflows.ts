@@ -1,6 +1,6 @@
 import { CommandModule } from "yargs";
 
-import { getAndVerifyCredentialsWithRetoolDB } from "../utils/credentials";
+import { getAndVerifyCredentials } from "../utils/credentials";
 import { dateOptions } from "../utils/date";
 import { logDAU } from "../utils/telemetry";
 import {
@@ -29,7 +29,7 @@ const builder: CommandModule["builder"] = {
   },
 };
 const handler = async function (argv: any) {
-  const credentials = await getAndVerifyCredentialsWithRetoolDB();
+  const credentials = await getAndVerifyCredentials();
   // fire and forget
   void logDAU(credentials);
 
