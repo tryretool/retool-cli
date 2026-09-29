@@ -6,7 +6,7 @@
 > If you're looking for a CLI tool for AI-powered app building, refer to Retool's [new CLI](https://www.npmjs.com/package/@tryretool/cli).
 
 
-A simple command line interface for classic apps, workflows, and other functionality on [Retool](https://retool.com/). Run `retool signup` to create a Retool account in 20 seconds.
+A simple command line interface for classic apps, workflows, and other functionality on [Retool](https://retool.com/).
 
 Open an issue in this repository for feature requests. PRs welcome!
 
