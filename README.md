@@ -1,6 +1,12 @@
-# Retool CLI
+# Retool Classic CLI
 
-A simple command line interface for [Retool](https://retool.com/). Run `retool signup` to create a Retool account in 20 seconds.
+> [!CAUTION]
+> The Retool Classic CLI is deprecated. It will be removed from cloud instances on March 1, 2027, and from stable instances in the Q2 2027 stable release.
+> 
+> If you're looking for a CLI tool for AI-powered app building, refer to Retool's [new CLI](https://www.npmjs.com/package/@tryretool/cli).
+
+
+A simple command line interface for classic apps, workflows, and other functionality on [Retool](https://retool.com/).
 
 Open an issue in this repository for feature requests. PRs welcome!
 
