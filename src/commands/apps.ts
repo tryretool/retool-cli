@@ -9,7 +9,7 @@ import {
   getAppsAndFolders,
 } from "../utils/apps";
 import type { App } from "../utils/apps";
-import { getAndVerifyCredentialsWithRetoolDB } from "../utils/credentials";
+import { getAndVerifyCredentials, getAndVerifyCredentialsWithRetoolDB } from "../utils/credentials";
 import { dateOptions } from "../utils/date";
 import {
   collectTableName,
@@ -52,7 +52,9 @@ const builder: CommandModule["builder"] = {
   },
 };
 const handler = async function (argv: any) {
-  const credentials = await getAndVerifyCredentialsWithRetoolDB();
+  const credentials = argv.t
+    ? await getAndVerifyCredentialsWithRetoolDB()
+    : await getAndVerifyCredentials();
   // fire and forget
   void logDAU(credentials);
 
